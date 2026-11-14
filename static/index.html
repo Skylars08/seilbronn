@@ -1,0 +1,2195 @@
+<!DOCTYPE html>
+<html lang="de" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seilbronn — Public Debate Dashboard</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cream: {
+              50: '#FCFBF8',
+              100: '#FAF8F2',
+              200: '#F4EFE6',
+              300: '#ECE5D8',
+            },
+            fyellow: '#F2CD68',
+            fdark: '#1F221B',
+            fgray: {
+              text: '#1C1D18',
+              muted: '#62665D',
+              light: '#8C9086',
+              border: '#EAE6DC',
+            },
+            topic: {
+              cost: '#E8A938',
+              access: '#3FAEA0',
+              transit: '#3B7EA1',
+              travel: '#CE643D',
+              env: '#5BA057',
+              other: '#787C72',
+            }
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"Segoe UI"', 'Roboto', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      background: 
+        radial-gradient(circle at 92% 30%, #FEF6DF 0%, rgba(254, 246, 223, 0.75) 35%, transparent 70%),
+        radial-gradient(circle at 8% 10%, #E2E6E8 0%, rgba(226, 230, 232, 0.7) 30%, transparent 60%),
+        radial-gradient(circle at 88% 88%, #FCF4EC 0%, rgba(252, 244, 236, 0.65) 35%, transparent 70%),
+        radial-gradient(circle at 25% 75%, #F5F1E6 0%, transparent 50%),
+        linear-gradient(135deg, #E6E9EB 0%, #F5F5F5 30%, #F9F6EB 65%, #FEF5DD 100%);
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+      color: #1F221B;
+      min-height: 100vh;
+    }
+
+    /* Clean frosted card style matching Google demo */
+    .f-card {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      border-radius: 26px;
+      box-shadow: 0 4px 24px -2px rgba(45, 35, 15, 0.05), 0 2px 8px -1px rgba(45, 35, 15, 0.02);
+      transition: all 0.2s ease;
+    }
+
+    /* Dark card */
+    .f-card-dark {
+      background-color: #1F221B;
+      color: #FFFFFF;
+      border-radius: 26px;
+      box-shadow: 0 8px 24px -4px rgba(25, 28, 22, 0.15);
+    }
+
+    /* Pill buttons */
+    .f-pill-dark {
+      background-color: #1F221B;
+      color: #FFFFFF;
+      border-radius: 9999px;
+      padding: 7px 18px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    .f-pill-light {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #1F221B;
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      border-radius: 9999px;
+      padding: 7px 18px;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      transition: all 0.15s ease;
+    }
+    .f-pill-light:hover {
+      background: rgba(255, 255, 255, 0.98);
+      border-color: #DCD6CA;
+    }
+
+    .f-pill-yellow {
+      background-color: #F2CD68;
+      color: #1F221B;
+      border-radius: 9999px;
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(242, 205, 104, 0.25);
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .f-pill-yellow:hover {
+      background-color: #EBC458;
+      transform: translateY(-1px);
+    }
+
+    /* SVG Donut Slices */
+    .f-slice {
+      transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), stroke-width 0.2s ease, filter 0.2s ease;
+      cursor: pointer;
+      transform-origin: 200px 200px;
+    }
+    .f-slice:hover {
+      transform: scale(1.04);
+      filter: drop-shadow(0px 6px 12px rgba(0,0,0,0.12));
+    }
+
+    /* Frosted Modal */
+    .f-modal-overlay {
+      background: rgba(31, 34, 27, 0.35);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    .f-modal {
+      background: #FFFFFF;
+      border: 1px solid #ECE7DC;
+      border-radius: 28px;
+      box-shadow: 0 24px 60px -12px rgba(35, 30, 20, 0.2);
+    }
+  </style>
+</head>
+<body class="font-sans antialiased flex flex-col min-h-screen">
+
+  <!-- TOP HEADER / NAV -->
+  <header class="w-full max-w-6xl mx-auto px-6 pt-6 pb-4 flex items-center justify-between">
+    <!-- Brand Title -->
+    <div class="cursor-pointer" onclick="switchTab('overview')">
+      <span class="text-2xl font-bold tracking-tight text-[#1F221B]">Seilbronn</span>
+    </div>
+
+    <!-- Navigation Pills Group -->
+    <nav class="flex items-center space-x-1.5 bg-transparent overflow-x-auto py-1">
+      <button onclick="switchTab('overview')" id="nav-overview" class="f-pill-dark">
+        Overview
+      </button>
+      <button onclick="switchTab('arguments')" id="nav-arguments" class="f-pill-light">
+        Arguments
+      </button>
+      <button onclick="switchTab('score')" id="nav-score" class="f-pill-light">
+        Support score
+      </button>
+      <button onclick="switchTab('stops')" id="nav-stops" class="f-pill-light">
+        Route &amp; stops
+      </button>
+      <button onclick="switchTab('compare')" id="nav-compare" class="f-pill-light">
+        Compare projects
+      </button>
+      <button onclick="switchTab('insights')" id="nav-insights" class="f-pill-light">
+        Key Insights
+      </button>
+      <button onclick="switchTab('labeling')" id="nav-labeling" class="f-pill-light">
+        Manual Labeling
+      </button>
+      <button onclick="switchTab('archive')" id="nav-archive" class="f-pill-light">
+        Archive
+      </button>
+    </nav>
+  </header>
+
+  <!-- MAIN WRAPPER -->
+  <main class="w-full max-w-6xl mx-auto px-6 py-4 flex-1 space-y-6">
+
+    <!-- ======================================================== -->
+    <!-- VIEW 1: OVERVIEW (THE EXACT FIGMA LAYOUT) -->
+    <!-- ======================================================== -->
+    <div id="view-overview" class="tab-view space-y-6">
+
+      <!-- Hero Header Section -->
+      <div class="pt-2">
+        <span class="text-[11px] font-bold text-[#8C9086] tracking-wider uppercase block mb-1">
+          PUBLIC DEBATE / HEILBRONN
+        </span>
+        <h1 class="text-4xl sm:text-5xl font-black text-[#1F221B] tracking-tight">
+          The cable car debate
+        </h1>
+        <p class="text-base text-[#62665D] mt-2 mb-4 font-normal">
+          Explore what people say, how opinion shifts and what each proposed stop raises.
+        </p>
+
+        <!-- Choose Dates Pill Button -->
+        <button onclick="openDateModal()" class="f-pill-light inline-flex items-center space-x-2 text-xs font-semibold py-2 px-4 shadow-sm">
+          <span id="active-date-pill-text">Choose dates</span>
+          <span class="text-[#8C9086]">▾</span>
+        </button>
+      </div>
+
+      <!-- MAIN ROW: Donut on Left (65%), Support Score & Stops on Right (35%) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+
+        <!-- LEFT CARD: Interactive Thin Donut with Leader Lines (8 Cols) -->
+        <div class="lg:col-span-8 f-card p-8 flex flex-col justify-center relative overflow-hidden min-h-[380px]">
+          
+          <div class="relative w-full h-[320px] flex items-center justify-center">
+            
+            <!-- SVG Donut Chart with Leader Lines & Labels -->
+            <svg id="donut-svg" viewBox="0 0 540 380" class="w-full h-full">
+              <!-- Center Count & Matches text -->
+              <g class="pointer-events-none text-center">
+                <text x="270" y="195" text-anchor="middle" font-size="34" font-weight="800" fill="#1F221B" id="svg-center-count">269</text>
+                <text x="270" y="215" text-anchor="middle" font-size="12" font-weight="500" fill="#787C72" id="svg-center-sub">matches</text>
+              </g>
+
+              <!-- Donut Ring Slices -->
+              <g id="donut-slices-group" class="transform origin-center">
+                <!-- Injected via JavaScript -->
+              </g>
+
+              <!-- Leader Lines & Direct Text Labels around Donut -->
+              <g id="donut-leaders-group" font-size="11" font-family="-apple-system, BlinkMacSystemFont, sans-serif">
+                <!-- Leader lines & text rendered via JS matching Figma -->
+              </g>
+            </svg>
+
+          </div>
+
+          <div class="text-center text-[11px] text-[#8C9086] pt-1">
+            Click on any slice to view topic arguments and citizen quotes
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Support Score Card & Route & Stops Card (4 Cols) -->
+        <div class="lg:col-span-4 flex flex-col gap-5 justify-between">
+          
+          <!-- TOP RIGHT: Support Score Card (White) -->
+          <div class="f-card p-6 flex flex-col justify-between flex-1">
+            <div>
+              <h3 class="text-sm font-bold text-[#1F221B]">Support score</h3>
+              <div class="text-4xl font-black text-[#1F221B] tracking-tight my-2" id="card-score-value">
+                6.25 / 10
+              </div>
+              <p class="text-xs text-[#787C72]" id="card-score-subtext">
+                8 scored posts · demo sample
+              </p>
+            </div>
+            <div class="pt-4">
+              <button onclick="openScoreModal()" class="f-pill-light text-xs font-semibold py-1.5 px-4">
+                See distribution
+              </button>
+            </div>
+          </div>
+
+          <!-- BOTTOM RIGHT: Route & Stops Card (Dark) -->
+          <div class="f-card-dark p-6 flex flex-col justify-between flex-1">
+            <div>
+              <h3 class="text-base font-bold text-white mb-1.5">Route &amp; stops</h3>
+              <p class="text-xs text-[#B2B6AC] leading-relaxed mb-4">
+                Six proposed stops connect the city centre and IPAI.
+              </p>
+            </div>
+            <div>
+              <button onclick="switchTab('stops')" class="bg-white text-[#1F221B] hover:bg-neutral-100 px-4 py-2 rounded-full font-bold text-xs shadow-sm inline-block transition">
+                Explore proposed stops
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- MIDDLE ROW: Planning Milestones Card -->
+      <div class="f-card p-7">
+        <h3 class="text-base font-bold text-[#1F221B] mb-5">Planning milestones</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Milestone 1 -->
+          <div>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-[#73776D] block mb-1">
+              03 APR 2025
+            </span>
+            <p class="text-sm font-semibold text-[#1F221B] leading-snug">
+              Council backs further planning
+            </p>
+          </div>
+
+          <!-- Milestone 2 -->
+          <div>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-[#73776D] block mb-1">
+              12 MAY 2025
+            </span>
+            <p class="text-sm font-semibold text-[#1F221B] leading-snug">
+              City and state sign letter of intent
+            </p>
+          </div>
+
+          <!-- Milestone 3 -->
+          <div>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-[#73776D] block mb-1">
+              27 JUL 2026
+            </span>
+            <p class="text-sm font-semibold text-[#1F221B] leading-snug">
+              Council approves preliminary planning
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- YELLOW PILL ACTION BUTTON: Explore Timeline & Comparisons -->
+      <div class="py-1">
+        <button onclick="openTimelineModal()" class="f-pill-yellow">
+          <span>Explore timeline and comparisons</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- STRATEGIC OVERVIEW SHORTCUTS: 5 Insights & City Comparison -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div onclick="switchTab('insights')" class="f-card p-5 cursor-pointer hover:border-[#1F221B] transition flex items-center justify-between group">
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-[#A87216]">POLICY BRIEF</span>
+            <h4 class="font-bold text-sm text-[#1F221B] mt-0.5 group-hover:text-[#A87216] transition">5 Key Policy Insights for Heilbronn</h4>
+            <p class="text-xs text-[#787C72] mt-0.5">Tariff parity, privacy mitigation, and funding clarity.</p>
+          </div>
+          <span class="f-pill-light text-xs shrink-0 ml-3">Explore Insights &rarr;</span>
+        </div>
+        <div onclick="switchTab('compare')" class="f-card p-5 cursor-pointer hover:border-[#1F221B] transition flex items-center justify-between group">
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-[#3B7EA1]">CROSS-PROJECT BENCHMARK</span>
+            <h4 class="font-bold text-sm text-[#1F221B] mt-0.5 group-hover:text-[#3B7EA1] transition">Heilbronn vs. Bonn, Paris &amp; IPAI</h4>
+            <p class="text-xs text-[#787C72] mt-0.5">Lessons learned from planned, operating, and megaproject peers.</p>
+          </div>
+          <span class="f-pill-light text-xs shrink-0 ml-3">Compare Projects &rarr;</span>
+        </div>
+      </div>
+
+      <!-- BOTTOM ROW: What the archive contains Card -->
+      <div class="f-card p-7 space-y-2">
+        <h3 class="text-base font-bold text-[#1F221B]">What the archive contains</h3>
+        <p class="text-xs text-[#73776D] font-medium">
+          19 Oct 2024–27 Oct 2026 · 39,361 records · 7 online references
+        </p>
+        <p class="text-sm font-bold text-[#1F221B] pt-1">
+          269 Heilbronn + Seilbahn matches · 146 news · 123 other
+        </p>
+        <p class="text-xs text-[#60645B]">
+          Keyword signals · 99 cost/funding · 29 accessibility · 25 connections · 23 travel time
+        </p>
+        <p class="text-[11px] text-[#8C9086] pt-1">
+          Signals overlap and await relevance and stance review.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 2: ARGUMENTS & TOPIC DETAIL -->
+    <!-- ======================================================== -->
+    <div id="view-arguments" class="tab-view hidden space-y-6">
+      
+      <!-- Top Topic Selector Pills -->
+      <div class="flex items-center justify-between pb-2 border-b border-[#ECE7DC]">
+        <div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-[#8C9086]">DEBATE TOPICS</span>
+          <h2 class="text-2xl font-bold text-[#1F221B]">Arguments by Topic</h2>
+        </div>
+        <div class="flex flex-wrap gap-2" id="topic-pills-bar">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+      <!-- Active Topic Card -->
+      <div class="f-card p-8 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-[#ECE7DC] gap-3">
+          <div>
+            <span id="arg-topic-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-[#FAF2DC] text-[#A87216]">
+              Cost &amp; funding
+            </span>
+            <h3 id="arg-topic-title" class="text-2xl font-bold text-[#1F221B] mt-2">
+              Cost &amp; Public Funding
+            </h3>
+            <p id="arg-topic-subtitle" class="text-xs text-[#62665D] mt-1 max-w-2xl">
+              Who pays for construction, and will operating deficits burden municipal taxpayers?
+            </p>
+          </div>
+        </div>
+
+        <!-- Supportive vs Critical Side by Side -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <!-- Supportive Column -->
+          <div class="space-y-3">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-[#408643] flex items-center space-x-1.5">
+              <span>Supportive arguments</span>
+            </h4>
+            <div id="arg-pro-list" class="space-y-2.5 text-xs">
+              <!-- Injected via JS -->
+            </div>
+          </div>
+
+          <!-- Critical Column -->
+          <div class="space-y-3">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-[#BF4A36] flex items-center space-x-1.5">
+              <span>Critical arguments &amp; concerns</span>
+            </h4>
+            <div id="arg-con-list" class="space-y-2.5 text-xs">
+              <!-- Injected via JS -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- What the City Can Do -->
+        <div class="p-5 rounded-2xl bg-[#FAF8F2] border border-[#ECE7DC] text-xs space-y-2">
+          <strong class="text-[#1F221B] block font-bold">What the city can do (Next Steps):</strong>
+          <ul id="arg-city-actions" class="space-y-1.5 text-[#62665D]">
+            <!-- Injected via JS -->
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 3: SUPPORT SCORE DETAILS -->
+    <!-- ======================================================== -->
+    <div id="view-score" class="tab-view hidden space-y-6">
+      <div>
+        <span class="text-[11px] font-bold uppercase tracking-wider text-[#8C9086]">PUBLIC SENTIMENT</span>
+        <h2 class="text-2xl font-bold text-[#1F221B]">Support Score &amp; Expressed Stance</h2>
+        <p class="text-xs text-[#62665D] mt-1">
+          Measured from verified citizen feedback, council decisions, and media coverage on a 0 to 10 scale.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div class="f-card p-6 flex flex-col justify-center text-center">
+          <span class="text-xs font-semibold text-[#8C9086]">Average Support Level</span>
+          <div class="text-5xl font-black text-[#1F221B] my-2">6.25</div>
+          <span class="text-xs text-[#408643] font-bold">Constructive / Favorable</span>
+        </div>
+
+        <div class="f-card p-6 md:col-span-2 space-y-3">
+          <span class="text-xs font-bold text-[#1F221B]">Polarity Distribution Across Statements</span>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between text-[#62665D]">
+              <span>Strong Support (8–10):</span>
+              <strong class="text-[#1F221B]">189 posts (51%)</strong>
+            </div>
+            <div class="w-full bg-[#F0EBE0] h-2.5 rounded-full overflow-hidden">
+              <div class="bg-[#5BA057] h-full" style="width: 51%"></div>
+            </div>
+
+            <div class="flex justify-between text-[#62665D]">
+              <span>Lean Support / Conditional (6–7):</span>
+              <strong class="text-[#1F221B]">136 posts (37%)</strong>
+            </div>
+            <div class="w-full bg-[#F0EBE0] h-2.5 rounded-full overflow-hidden">
+              <div class="bg-[#E8A938] h-full" style="width: 37%"></div>
+            </div>
+
+            <div class="flex justify-between text-[#62665D]">
+              <span>Skeptical / Critical (0–4):</span>
+              <strong class="text-[#1F221B]">30 posts (8%)</strong>
+            </div>
+            <div class="w-full bg-[#F0EBE0] h-2.5 rounded-full overflow-hidden">
+              <div class="bg-[#CE643D] h-full" style="width: 8%"></div>
+            </div>
+          </div>
+          <p class="text-[11px] text-[#8C9086] pt-2">
+            314 factual press reports and neutral council milestones are tracked separately from polarity averages.
+          </p>
+        </div>
+      </div>
+
+      <!-- SUPPORT SCORE OVER TIME GRAPH (Matching Cable-Car-Debate-Atlas-NLP-Labeler) -->
+      <div class="f-card p-7 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[#ECE7DC] gap-2">
+          <div>
+            <h3 class="text-base font-bold text-[#1F221B]">Average Support Score Over Time</h3>
+            <p class="text-xs text-[#787C72]">
+              Track how expressed public sentiment shifted across monthly council milestones (0 to 10 scale).
+            </p>
+          </div>
+          <div class="flex items-center space-x-3 text-xs text-[#787C72]">
+            <span class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded-full bg-[#E8A938]"></span><span>Mean Support Score</span></span>
+            <span class="flex items-center space-x-1.5"><span class="w-3 h-0.5 bg-[#8C9086] border-t border-dashed border-[#8C9086]"></span><span>Neutral Baseline (5.0)</span></span>
+          </div>
+        </div>
+
+        <div class="w-full h-72">
+          <canvas id="scoreOverTimeCanvas"></canvas>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-[#FAF8F2] border border-[#ECE7DC] text-xs flex flex-wrap items-center justify-between gap-2 text-[#62665D]">
+          <div>
+            <strong>Milestone Spikes:</strong>
+            <span class="ml-1">Noticeable sentiment surge during the <strong>03 Apr 2025</strong> Council Vote and <strong>12 May 2025</strong> State Funding LOI.</span>
+          </div>
+          <span class="text-[11px] text-[#8C9086]">Derived from 718 records · Excludes removed items</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 4: ROUTE & 6 STOPS (HALTSTELLEN) -->
+    <!-- ======================================================== -->
+    <div id="view-stops" class="tab-view hidden space-y-6">
+      <div>
+        <span class="text-[11px] font-bold uppercase tracking-wider text-[#8C9086]">TRANSIT CORRIDOR</span>
+        <h2 class="text-2xl font-bold text-[#1F221B]">Proposed Route &amp; 6 Stops</h2>
+        <p class="text-xs text-[#62665D] mt-1">
+          14-minute end-to-end aerial cableway connecting Heilbronn Central Station to IPAI.
+        </p>
+      </div>
+
+      <!-- Horizontal Stops Tabs -->
+      <div class="grid grid-cols-2 sm:grid-cols-6 gap-2" id="stops-selector-strip">
+        <!-- Injected via JS -->
+      </div>
+
+      <!-- Active Stop Details Card -->
+      <div class="f-card p-8 space-y-5" id="active-stop-card">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW: CITY & PROJECT COMPARISON (PILLAR 2: COMPARE) -->
+    <!-- ======================================================== -->
+    <div id="view-compare" class="tab-view hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-[#3B7EA1]">CHALLENGE PILLAR 2 · COMPARE</span>
+          <h2 class="text-2xl font-bold text-[#1F221B]">City &amp; Project Comparisons</h2>
+          <p class="text-xs text-[#62665D] mt-1">
+            Contrasting Heilbronn's planned ropeway with Bonn (planning), Paris Câble C1 (operating), and the local IPAI AI Campus.
+          </p>
+        </div>
+        <div class="flex items-center space-x-2 text-xs">
+          <span class="px-3 py-1 rounded-full bg-[#EBF5EA] text-[#2B602E] font-bold">4 Benchmarked Megaprojects</span>
+        </div>
+      </div>
+
+      <!-- 4 Comparison Cards Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5" id="compare-cards-grid">
+        <!-- Rendered via JS -->
+      </div>
+
+      <!-- Comparative Synthesis Table -->
+      <div class="f-card p-7 space-y-4">
+        <h3 class="text-base font-bold text-[#1F221B]">Strategic Cross-City Comparison Matrix</h3>
+        <p class="text-xs text-[#787C72]">
+          Key differences in infrastructure barriers, ecological controversy, fare integration, and public adoption patterns.
+        </p>
+        
+        <div class="overflow-x-auto pt-2">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-[#ECE7DC] text-[#787C72] font-bold">
+                <th class="py-2.5 px-3">Project &amp; City</th>
+                <th class="py-2.5 px-3">Stage</th>
+                <th class="py-2.5 px-3">Transit Barrier Overcome</th>
+                <th class="py-2.5 px-3">Chief Controversy</th>
+                <th class="py-2.5 px-3">Fare Model</th>
+                <th class="py-2.5 px-3">Public Score</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[#ECE7DC] text-[#1F221B]" id="compare-matrix-body">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- News vs. Social Media Divergence Card -->
+      <div class="f-card p-6 grid grid-cols-1 md:grid-cols-2 gap-6 bg-gradient-to-r from-[#FAF8F2] to-[#FFFFFF]">
+        <div class="space-y-2">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-[#1F221B]">NEWS COVERAGE DYNAMICS</span>
+          <h4 class="font-bold text-sm text-[#1F221B]">Focus on Politics &amp; Deficits</h4>
+          <p class="text-xs text-[#62665D] leading-relaxed">
+            74% of newspaper articles fixate on City Council voting factions, budget deliberations, and bureaucratic subsidy deadlines. Press coverage peaks sharply around council voting days and fades quickly.
+          </p>
+        </div>
+        <div class="space-y-2">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-[#A87216]">SOCIAL MEDIA DYNAMICS</span>
+          <h4 class="font-bold text-sm text-[#1F221B]">Focus on Everyday Usability &amp; Privacy</h4>
+          <p class="text-xs text-[#62665D] leading-relaxed">
+            Citizen YouTube comments and forum posts focus heavily on practical daily routines: carrying bicycles, stroller boarding, operating during winter ice storms, and privacy when passing apartment windows.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW: 5 KEY INSIGHTS (DELIVERABLE 8) -->
+    <!-- ======================================================== -->
+    <div id="view-insights" class="tab-view hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-[#A87216]">DELIVERABLE 8 · MUNICIPAL STRATEGY BRIEF</span>
+          <h2 class="text-2xl font-bold text-[#1F221B]">5 Key Policy Insights for the City of Heilbronn</h2>
+          <p class="text-xs text-[#62665D] mt-1">
+            Data-backed policy recommendations derived from 39,361 municipal corpus items, 718 project mentions, and cross-city benchmarks.
+          </p>
+        </div>
+        <div class="flex items-center space-x-2 text-xs">
+          <span class="px-3 py-1 rounded-full bg-[#FAF2DC] text-[#A87216] font-bold">Heilbronn Decision Blueprint</span>
+        </div>
+      </div>
+
+      <!-- 5 Insights List Container -->
+      <div class="space-y-4" id="insights-list-container">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW: MANUAL LABELING & NLP REVIEW (AS IN REPO) -->
+    <!-- ======================================================== -->
+    <div id="view-labeling" class="tab-view hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-[#A87216]">NLP &amp; HUMAN VERIFICATION</span>
+          <h2 class="text-2xl font-bold text-[#1F221B]">Manual Labeling Workbench</h2>
+          <p class="text-xs text-[#62665D] mt-1">
+            Review unclassified records or manually adjust NLP keyword-assigned labels. Human labels overwrite rules and update project charts.
+          </p>
+        </div>
+        <!-- Stats Pill Counters -->
+        <div class="flex items-center space-x-2 text-xs">
+          <span class="px-3 py-1 rounded-full bg-[#FAF2DC] text-[#A87216] font-bold" id="badge-unclassified-count">
+            349 Needs Review
+          </span>
+          <span class="px-3 py-1 rounded-full bg-[#EBF5EA] text-[#2B602E] font-bold" id="badge-reviewed-count">
+            0 Reviewed
+          </span>
+        </div>
+      </div>
+
+      <!-- Mode Filters & Search -->
+      <div class="f-card p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div class="flex flex-wrap gap-1.5" id="labeling-mode-tabs">
+          <button onclick="setLabelingMode('unclassified')" id="btn-mode-unclassified" class="f-pill-dark text-xs py-1.5">
+            Needs review / Unclassified
+          </button>
+          <button onclick="setLabelingMode('all')" id="btn-mode-all" class="f-pill-light text-xs py-1.5">
+            All Records
+          </button>
+          <button onclick="setLabelingMode('reviewed')" id="btn-mode-reviewed" class="f-pill-light text-xs py-1.5">
+            Human Confirmed
+          </button>
+        </div>
+        <div class="flex-1 max-w-xs min-w-[200px]">
+          <input type="text" id="labeling-search-input" oninput="debounceLabelingSearch()" placeholder="Search queue..." 
+            class="w-full px-3 py-1.5 rounded-full border border-[#ECE7DC] bg-[#FAF8F2] text-xs focus:outline-none">
+        </div>
+      </div>
+
+      <!-- Two-Column Workbench Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Left: Queue List (5 Cols) -->
+        <div class="lg:col-span-5 f-card p-5 space-y-3">
+          <div class="flex justify-between items-center text-xs font-bold text-[#1F221B]">
+            <span>Queue Items</span>
+            <span class="text-[#787C72] text-[11px]" id="queue-count-label">Loading...</span>
+          </div>
+
+          <div id="queue-items-list" class="space-y-2 max-h-[580px] overflow-y-auto pr-1 text-xs">
+            <!-- Queue items populated via JS -->
+          </div>
+
+          <!-- Queue Pagination -->
+          <div class="flex justify-between items-center text-xs text-[#787C72] pt-2 border-t border-[#ECE7DC]">
+            <button onclick="changeQueuePage(-1)" id="btn-queue-prev" class="f-pill-light text-xs py-1 px-3">&larr; Prev</button>
+            <span id="queue-page-label">Page 1</span>
+            <button onclick="changeQueuePage(1)" id="btn-queue-next" class="f-pill-light text-xs py-1 px-3">Next &rarr;</button>
+          </div>
+        </div>
+
+        <!-- Right: Record Inspector & Labeling Form (7 Cols) -->
+        <div class="lg:col-span-7 f-card p-7 space-y-5" id="labeling-editor-panel">
+          <div class="text-center py-12 text-[#8C9086] text-xs">
+            Select an item from the queue on the left to inspect and manually assign labels.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+
+    <!-- ======================================================== -->
+    <!-- VIEW 6: ARCHIVE & SEARCH -->
+    <!-- ======================================================== -->
+    <div id="view-archive" class="tab-view hidden space-y-5">
+      <div class="flex items-center justify-between">
+        <div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-[#8C9086]">CITIZEN &amp; NEWS ARCHIVE</span>
+          <h2 class="text-2xl font-bold text-[#1F221B]">Evidence Records</h2>
+        </div>
+        <div class="flex space-x-2">
+          <a href="/api/export/json" download class="f-pill-light text-xs">Export JSON</a>
+          <a href="/api/export/jsonl" download class="f-pill-light text-xs">RAG JSONL</a>
+        </div>
+      </div>
+
+      <div class="f-card p-4 flex flex-wrap gap-2 text-xs">
+        <input type="text" id="search-input" oninput="debounceSearch()" placeholder="Search keywords..." class="flex-1 px-3 py-1.5 rounded-full border border-[#ECE7DC] bg-[#FAF8F2] text-xs">
+        <select id="topic-filter" onchange="loadArchive(1)" class="px-3 py-1.5 rounded-full border border-[#ECE7DC] bg-[#FAF8F2] text-xs">
+          <option value="all">All Topics</option>
+          <option value="Cost & Funding">Cost & Funding</option>
+          <option value="Bus & Transit Connections">Bus & Transit Connections</option>
+          <option value="Accessibility & Stations">Accessibility & Stations</option>
+          <option value="Travel Time & Commute">Travel Time & Commute</option>
+          <option value="Environment & Living Privacy">Environment & Living Privacy</option>
+          <option value="Other & Unclassified">Other & Unclassified</option>
+        </select>
+        <span id="archive-count-label" class="self-center text-[#787C72] px-2 text-xs">683 records</span>
+      </div>
+
+      <div id="archive-items-container" class="space-y-3">
+        <!-- Injected via JS -->
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex justify-between items-center text-xs text-[#787C72] pt-2">
+        <button onclick="changePage(-1)" id="btn-page-prev" class="f-pill-light text-xs py-1 px-3">&larr; Prev</button>
+        <span id="page-label">Page 1</span>
+        <button onclick="changePage(1)" id="btn-page-next" class="f-pill-light text-xs py-1 px-3">Next &rarr;</button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: CHOOSE DATES (FROSTED OVERLAY) -->
+  <!-- ======================================================== -->
+  <div id="date-modal" class="fixed inset-0 z-50 f-modal-overlay hidden flex items-center justify-center p-4">
+    <div class="f-modal max-w-md w-full p-7 space-y-5 animate-in fade-in duration-200">
+      <div class="flex items-center justify-between pb-3 border-b border-[#ECE7DC]">
+        <div>
+          <h3 class="text-base font-bold text-[#1F221B]">Choose dates</h3>
+          <p class="text-xs text-[#787C72]">Select timeframe to update chart and counts</p>
+        </div>
+        <button onclick="closeDateModal()" class="text-[#8C9086] hover:text-[#1F221B]">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2 text-xs">
+        <span class="font-bold text-[#787C72] uppercase tracking-wider block">Presets</span>
+        
+        <button onclick="applyDatePreset('all')" class="w-full text-left p-3 rounded-2xl border border-[#ECE7DC] hover:bg-[#FAF8F2] flex justify-between items-center">
+          <div>
+            <strong class="text-sm text-[#1F221B] block">Full archive</strong>
+            <span class="text-[11px] text-[#787C72]">19 Oct 2024–27 Oct 2026 (269 matches)</span>
+          </div>
+          <span class="text-[#8C9086]">&rarr;</span>
+        </button>
+
+        <button onclick="applyDatePreset('loi')" class="w-full text-left p-3 rounded-2xl border border-[#ECE7DC] hover:bg-[#FAF8F2] flex justify-between items-center">
+          <div>
+            <strong class="text-sm text-[#1F221B] block">1 Apr–31 May 2025</strong>
+            <span class="text-[11px] text-[#787C72]">Council Decision &amp; State Funding LOI</span>
+          </div>
+          <span class="text-[#8C9086]">&rarr;</span>
+        </button>
+
+        <button onclick="applyDatePreset('vorplanung')" class="w-full text-left p-3 rounded-2xl border border-[#ECE7DC] hover:bg-[#FAF8F2] flex justify-between items-center">
+          <div>
+            <strong class="text-sm text-[#1F221B] block">1 Jul–31 Aug 2026</strong>
+            <span class="text-[11px] text-[#787C72]">Council Approves Preliminary Planning (Vorplanung)</span>
+          </div>
+          <span class="text-[#8C9086]">&rarr;</span>
+        </button>
+      </div>
+
+      <div class="pt-3 border-t border-[#ECE7DC] space-y-2">
+        <span class="text-xs font-bold text-[#787C72] uppercase tracking-wider block">Custom Range</span>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <span class="text-[11px] text-[#787C72] block mb-1">From</span>
+            <input type="date" id="date-from" value="2025-04-01" class="w-full p-2 rounded-xl border border-[#ECE7DC] bg-[#FAF8F2] text-xs">
+          </div>
+          <div>
+            <span class="text-[11px] text-[#787C72] block mb-1">To</span>
+            <input type="date" id="date-to" value="2025-05-31" class="w-full p-2 rounded-xl border border-[#ECE7DC] bg-[#FAF8F2] text-xs">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-2">
+        <button onclick="closeDateModal()" class="f-pill-light text-xs">Cancel</button>
+        <button onclick="applyCustomDate()" class="f-pill-yellow text-xs">Apply example range</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: TIMELINE & COMPARISONS -->
+  <!-- ======================================================== -->
+  <div id="timeline-modal" class="fixed inset-0 z-50 f-modal-overlay hidden flex items-center justify-center p-4">
+    <div class="f-modal max-w-2xl w-full p-7 space-y-5">
+      <div class="flex items-center justify-between pb-3 border-b border-[#ECE7DC]">
+        <div>
+          <h3 class="text-base font-bold text-[#1F221B]">Timeline &amp; Coverage Volume</h3>
+          <p class="text-xs text-[#787C72]">Weekly coverage spikes around April 2025 and July 2026 council decisions</p>
+        </div>
+        <button onclick="closeTimelineModal()" class="text-[#8C9086] hover:text-[#1F221B]">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="w-full h-64">
+        <canvas id="timelineChartCanvas"></canvas>
+      </div>
+
+      <div class="flex justify-between items-center text-xs text-[#787C72]">
+        <span>Spikes correspond to the <strong>03 Apr 2025</strong> and <strong>27 Jul 2026</strong> votes.</span>
+        <button onclick="closeTimelineModal()" class="f-pill-dark text-xs">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: SUPPORT SCORE DISTRIBUTION -->
+  <!-- ======================================================== -->
+  <div id="score-modal" class="fixed inset-0 z-50 f-modal-overlay hidden flex items-center justify-center p-4">
+    <div class="f-modal max-w-md w-full p-7 space-y-4">
+      <div class="flex items-center justify-between pb-2 border-b border-[#ECE7DC]">
+        <h3 class="text-base font-bold text-[#1F221B]">Support score distribution</h3>
+        <button onclick="closeScoreModal()" class="text-[#8C9086] hover:text-[#1F221B]">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <p class="text-xs text-[#62665D]">
+        Average score is <strong>6.25 / 10</strong>. Unclear posts are tracked separately from the average.
+      </p>
+      <div class="w-full h-44">
+        <canvas id="scoreDistCanvas"></canvas>
+      </div>
+      <div class="flex justify-end pt-2">
+        <button onclick="closeScoreModal()" class="f-pill-dark text-xs">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT APPLICATION CODE -->
+  <script>
+    // State matching Figma data
+    const figmaData = {
+      totalMatches: 269,
+      topics: [
+        { key: 'Cost & funding', name: 'Cost & funding', pct: 36.8, count: 99, color: '#E8A938', anchor: 'top-right' },
+        { key: 'Accessibility', name: 'Accessibility', pct: 1.5, count: 4, color: '#3FAEA0', anchor: 'mid-right' },
+        { key: 'Bus connections', name: 'Bus connections', pct: 4.1, count: 11, color: '#3B7EA1', anchor: 'low-right' },
+        { key: 'Travel time', name: 'Travel time', pct: 4.1, count: 11, color: '#CE643D', anchor: 'bottom' },
+        { key: 'Environment', name: 'Environment', pct: 1.1, count: 3, color: '#5BA057', anchor: 'bottom-left' },
+        { key: 'Other / unclassified', name: 'Other / unclassified', pct: 52.4, count: 141, color: '#787C72', anchor: 'top-left' }
+      ],
+      currentTopic: 'Cost & funding',
+      currentStopId: 'bildungscampus',
+      archivePage: 1
+    };
+
+    let topicsKnowledge = null;
+    let stopsData = null;
+    let timelineInstance = null;
+    let scoreDistInstance = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      lucide.createIcons();
+      await fetchBackendData();
+      renderStopsSelector();
+      renderActiveStop();
+      renderTopicArguments();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const pStart = urlParams.get('start_date');
+      const pEnd = urlParams.get('end_date');
+      if (pStart || pEnd) {
+        await updateDashboardForDateRange(pStart, pEnd, `${pStart || ''} – ${pEnd || ''}`);
+      } else {
+        await updateDashboardForDateRange(null, null, 'Choose dates');
+      }
+
+      const pTab = urlParams.get('tab') || window.location.hash.replace('#', '') || 'overview';
+      history.replaceState({ tab: pTab }, '', window.location.href);
+      switchTab(pTab, false);
+    });
+
+    async function fetchBackendData() {
+      try {
+        const [topRes, stopRes] = await Promise.all([
+          fetch('/api/topics'),
+          fetch('/api/stops')
+        ]);
+        topicsKnowledge = await topRes.json();
+        stopsData = await stopRes.json();
+      } catch (e) {
+        console.warn('Backend fetch failed, using built-in defaults:', e);
+      }
+    }
+
+    // Switch Navigation Tabs with Browser History Support
+    function switchTab(tabKey, updateHistory = true) {
+      document.querySelectorAll('.tab-view').forEach(v => v.classList.add('hidden'));
+      const target = document.getElementById(`view-${tabKey}`);
+      if (target) target.classList.remove('hidden');
+
+      // Update Header Pill Buttons
+      ['overview', 'arguments', 'score', 'stops', 'compare', 'insights', 'labeling', 'archive'].forEach(k => {
+        const btn = document.getElementById(`nav-${k}`);
+        if (!btn) return;
+        if (k === tabKey) {
+          btn.className = 'f-pill-dark';
+        } else {
+          btn.className = 'f-pill-light';
+        }
+      });
+
+      if (tabKey === 'arguments') renderTopicArguments();
+      if (tabKey === 'score') renderScoreOverTimeChart();
+      if (tabKey === 'stops') renderActiveStop();
+      if (tabKey === 'compare') renderCompareView();
+      if (tabKey === 'insights') renderInsightsView();
+      if (tabKey === 'labeling') initLabelingWorkbench();
+      if (tabKey === 'archive') loadArchive(1);
+
+      // Push history state so browser Back & Forward buttons work seamlessly
+      if (updateHistory) {
+        const url = new URL(window.location);
+        url.searchParams.set('tab', tabKey);
+        const currentStateTab = history.state ? history.state.tab : null;
+        if (currentStateTab !== tabKey) {
+          history.pushState({ tab: tabKey }, '', url.toString());
+        }
+      }
+
+      lucide.createIcons();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Listen to browser Back and Forward navigation events
+    window.addEventListener('popstate', (e) => {
+      const tab = (e.state && e.state.tab) || new URLSearchParams(window.location.search).get('tab') || 'overview';
+      switchTab(tab, false);
+    });
+
+    // ========================================================
+    // RENDER DONUT WITH EXACT FIGMA LEADER LINES
+    // ========================================================
+    function renderDonutSVG() {
+      const slicesG = document.getElementById('donut-slices-group');
+      const leadersG = document.getElementById('donut-leaders-group');
+      slicesG.innerHTML = '';
+      leadersG.innerHTML = '';
+
+      const cx = 270, cy = 190, r = 85, strokeWidth = 24;
+      const circumference = 2 * Math.PI * r;
+      let cumAngle = -90; // start at top
+
+      // Leader coordinates for the 6 slices matching Figma thumbnail exactly
+      const labelPositions = [
+        { label: 'Cost & funding', sub: '36.8% · 99', lx: 380, ly: 125, lnx: 335, lny: 145, align: 'start' },
+        { label: 'Accessibility', sub: '1.5% · 4', lx: 380, ly: 185, lnx: 355, lny: 185, align: 'start' },
+        { label: 'Bus connections', sub: '4.1% · 11', lx: 375, ly: 245, lnx: 335, lny: 235, align: 'start' },
+        { label: 'Travel time', sub: '4.1% · 11', lx: 270, ly: 335, lnx: 270, lny: 285, align: 'middle' },
+        { label: 'Environment', sub: '1.1% · 3', lx: 150, ly: 300, lnx: 205, lny: 250, align: 'end' },
+        { label: 'Other / unclassified', sub: '52.4% · 141', lx: 145, ly: 135, lnx: 205, lny: 145, align: 'end' },
+      ];
+
+      figmaData.topics.forEach((t, i) => {
+        const pct = t.pct / 100;
+        const dash = pct * circumference;
+        const offset = -((cumAngle + 90) / 360) * circumference;
+        cumAngle += pct * 360;
+
+        // Donut slice circle
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', cx);
+        circle.setAttribute('cy', cy);
+        circle.setAttribute('r', r);
+        circle.setAttribute('fill', 'transparent');
+        circle.setAttribute('stroke', t.color);
+        circle.setAttribute('stroke-width', strokeWidth);
+        circle.setAttribute('stroke-dasharray', `${dash} ${circumference}`);
+        circle.setAttribute('stroke-dashoffset', offset);
+        circle.setAttribute('class', 'f-slice');
+
+        // Hover & click
+        circle.addEventListener('mouseenter', () => {
+          document.getElementById('svg-center-count').textContent = t.count;
+          document.getElementById('svg-center-sub').textContent = `${t.pct}%`;
+        });
+        circle.addEventListener('mouseleave', () => {
+          document.getElementById('svg-center-count').textContent = figmaData.totalMatches;
+          document.getElementById('svg-center-sub').textContent = 'matches';
+        });
+        circle.addEventListener('click', () => {
+          openTopic(t.name);
+        });
+
+        slicesG.appendChild(circle);
+
+        // Leader line and label
+        const pos = labelPositions[i];
+        if (pos) {
+          // Line
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', pos.lnx);
+          line.setAttribute('y1', pos.lny);
+          line.setAttribute('x2', pos.align === 'start' ? pos.lx - 6 : (pos.align === 'end' ? pos.lx + 6 : pos.lx));
+          line.setAttribute('y2', pos.ly);
+          line.setAttribute('stroke', '#D8D4CA');
+          line.setAttribute('stroke-width', '1');
+          leadersG.appendChild(line);
+
+          // Text group
+          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          g.setAttribute('class', 'cursor-pointer');
+          g.onclick = () => openTopic(t.name);
+
+          const txt1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          txt1.setAttribute('x', pos.lx);
+          txt1.setAttribute('y', pos.ly - 2);
+          txt1.setAttribute('text-anchor', pos.align);
+          txt1.setAttribute('font-weight', '700');
+          txt1.setAttribute('fill', '#1F221B');
+          txt1.textContent = pos.label;
+
+          const txt2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          txt2.setAttribute('x', pos.lx);
+          txt2.setAttribute('y', pos.ly + 11);
+          txt2.setAttribute('text-anchor', pos.align);
+          txt2.setAttribute('font-size', '9.5');
+          txt2.setAttribute('fill', '#787C72');
+          txt2.textContent = `${t.pct}% · ${t.count}`;
+
+          g.appendChild(txt1);
+          g.appendChild(txt2);
+          leadersG.appendChild(g);
+        }
+      });
+    }
+
+    function openTopic(name) {
+      figmaData.currentTopic = name;
+      switchTab('arguments');
+    }
+
+    // ========================================================
+    // RENDER TOPIC ARGUMENTS VIEW
+    // ========================================================
+    function renderTopicArguments() {
+      // Map names
+      const keyMap = {
+        'Cost & funding': 'Cost & Funding',
+        'Accessibility': 'Accessibility & Stations',
+        'Bus connections': 'Bus & Transit Connections',
+        'Travel time': 'Travel Time & Commute',
+        'Environment': 'Environment & Living Privacy',
+        'Other / unclassified': 'Other & Unclassified'
+      };
+
+      const bar = document.getElementById('topic-pills-bar');
+      bar.innerHTML = '';
+
+      Object.keys(keyMap).forEach(displayName => {
+        const btn = document.createElement('button');
+        const isActive = displayName.toLowerCase() === figmaData.currentTopic.toLowerCase();
+        btn.className = isActive ? 'f-pill-dark text-xs py-1.5' : 'f-pill-light text-xs py-1.5';
+        btn.textContent = displayName;
+        btn.onclick = () => {
+          figmaData.currentTopic = displayName;
+          renderTopicArguments();
+        };
+        bar.appendChild(btn);
+      });
+
+      const backendKey = keyMap[figmaData.currentTopic] || 'Cost & Funding';
+      const knowledge = topicsKnowledge ? topicsKnowledge[backendKey] : null;
+
+      document.getElementById('arg-topic-badge').textContent = figmaData.currentTopic;
+      document.getElementById('arg-topic-title').textContent = knowledge ? knowledge.title : figmaData.currentTopic;
+      document.getElementById('arg-topic-subtitle').textContent = knowledge ? knowledge.key_question : 'Arguments and evidence.';
+
+      const proList = document.getElementById('arg-pro-list');
+      proList.innerHTML = '';
+      if (knowledge && knowledge.pro_arguments) {
+        knowledge.pro_arguments.forEach(arg => {
+          const d = document.createElement('div');
+          d.className = 'p-3 rounded-2xl bg-[#F6FAF5] border border-[#E1ECE0]';
+          d.innerHTML = `<strong class="text-[#2B602E] block mb-0.5">${arg.claim}</strong><p class="text-[#62665D] text-[11px]">${arg.evidence}</p>`;
+          proList.appendChild(d);
+        });
+      }
+
+      const conList = document.getElementById('arg-con-list');
+      conList.innerHTML = '';
+      if (knowledge && knowledge.con_arguments) {
+        knowledge.con_arguments.forEach(arg => {
+          const d = document.createElement('div');
+          d.className = 'p-3 rounded-2xl bg-[#FCF6F4] border border-[#F2DFDA]';
+          d.innerHTML = `<strong class="text-[#8E3222] block mb-0.5">${arg.claim}</strong><p class="text-[#62665D] text-[11px]">${arg.evidence}</p>`;
+          conList.appendChild(d);
+        });
+      }
+
+      const actionsList = document.getElementById('arg-city-actions');
+      actionsList.innerHTML = '';
+      if (knowledge && knowledge.city_actions) {
+        knowledge.city_actions.forEach(act => {
+          const li = document.createElement('li');
+          li.innerHTML = `&bull; ${act}`;
+          actionsList.appendChild(li);
+        });
+      }
+    }
+
+    // ========================================================
+    // RENDER ROUTE & 6 STOPS VIEW
+    // ========================================================
+    const STOPS_LIST = [
+      { id: 'hbf', name: 'Hauptbahnhof', time: '0 min', subtitle: 'Regional & High-Speed Hub', desc: 'Covered footbridge connecting DB Platform 1 to cable-car entrance. Commuters transfer seamlessly from S-Bahn and RE trains.' },
+      { id: 'neckarbogen', name: 'Neckarbogen', time: '3 min', subtitle: 'Eco-District & Waterfront', desc: 'Direct ramp to river promenade. Primary citizen issue is privacy into 3rd-floor balconies, solved via smart electrochromic frosting.' },
+      { id: 'europaplatz', name: 'Europaplatz / BUGA', time: '6 min', subtitle: 'Convention & Parklands', desc: 'Direct integration with convention center and former BUGA grounds. Unified tariff with Deutschlandticket.' },
+      { id: 'bildungscampus', name: 'Bildungscampus West', time: '9 min', subtitle: 'University & Research Hub', desc: 'Short 60m landscaped walkway to DHBW and TUM Campus. High student enthusiasm for reliable late evening operations.' },
+      { id: 'theresienwiese', name: 'Theresienwiese / Wohlgelegen', time: '11 min', subtitle: 'P+R Regional Terminal', desc: 'Direct elevator connecting 800-car parking deck to platform. Regional drivers bypass city jams.' },
+      { id: 'ipai', name: 'IPAI', time: '14 min', subtitle: 'Europe AI Flagship Campus', desc: 'Station terminal integrated into the main IPAI Innovation Forum atrium. 14 minutes flat from Hbf.' }
+    ];
+
+    function renderStopsSelector() {
+      const container = document.getElementById('stops-selector-strip');
+      container.innerHTML = '';
+
+      STOPS_LIST.forEach((s, idx) => {
+        const btn = document.createElement('button');
+        const isActive = s.id === figmaData.currentStopId;
+        btn.className = isActive ? 'f-card-dark p-3 text-left' : 'f-card p-3 text-left hover:border-[#DCD6CA]';
+        btn.onclick = () => {
+          figmaData.currentStopId = s.id;
+          renderStopsSelector();
+          renderActiveStop();
+        };
+        btn.innerHTML = `
+          <span class="text-[10px] block opacity-60">#${idx+1} · ${s.time}</span>
+          <strong class="text-xs font-bold block truncate">${s.name}</strong>
+        `;
+        container.appendChild(btn);
+      });
+    }
+
+    function renderActiveStop() {
+      const s = STOPS_LIST.find(x => x.id === figmaData.currentStopId) || STOPS_LIST[3];
+      const card = document.getElementById('active-stop-card');
+      card.innerHTML = `
+        <div class="flex items-center justify-between pb-4 border-b border-[#ECE7DC]">
+          <div>
+            <span class="text-[11px] font-bold text-[#A87216] uppercase tracking-wider block">Stop Overview</span>
+            <h3 class="text-2xl font-bold text-[#1F221B] mt-0.5">${s.name}</h3>
+            <span class="text-xs text-[#787C72]">${s.subtitle} · ${s.time} from Hauptbahnhof</span>
+          </div>
+          <span class="f-pill-light text-xs font-bold">${s.time}</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
+          <div class="p-4 rounded-2xl bg-[#FAF8F2] border border-[#ECE7DC] space-y-1">
+            <strong class="text-[#1F221B] block font-bold">Transfer &amp; Walking Link:</strong>
+            <p class="text-[#62665D] leading-relaxed">${s.desc}</p>
+          </div>
+          <div class="p-4 rounded-2xl bg-[#FAF8F2] border border-[#ECE7DC] space-y-1">
+            <strong class="text-[#1F221B] block font-bold">Citizen Expectation &amp; Planning Fix:</strong>
+            <p class="text-[#62665D] leading-relaxed">
+              Timetable coordination, step-free access for strollers/wheelchairs, and covered rain canopies.
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
+    // ========================================================
+    // ARCHIVE LOGIC
+    // ========================================================
+    let searchTimer = null;
+    function debounceSearch() {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => loadArchive(1), 250);
+    }
+
+    async function loadArchive(page = 1) {
+      figmaData.archivePage = page;
+      const q = document.getElementById('search-input')?.value || '';
+      const topic = document.getElementById('topic-filter')?.value || 'all';
+
+      let url = `/api/archive?page=${page}&limit=12&topic=${topic}&query=${encodeURIComponent(q)}`;
+      if (activeStartDate) url += `&start_date=${activeStartDate}`;
+      if (activeEndDate) url += `&end_date=${activeEndDate}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        renderArchiveCards(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderArchiveCards(data) {
+      const container = document.getElementById('archive-items-container');
+      container.innerHTML = '';
+
+      document.getElementById('archive-count-label').textContent = `${data.total} records`;
+      document.getElementById('page-label').textContent = `Page ${data.page} of ${data.pages || 1}`;
+      document.getElementById('btn-page-prev').disabled = data.page <= 1;
+      document.getElementById('btn-page-next').disabled = data.page >= data.pages;
+
+      data.records.forEach(r => {
+        const item = document.createElement('div');
+        item.className = 'f-card p-4 space-y-1.5 text-xs';
+        item.innerHTML = `
+          <div class="flex items-center justify-between text-[11px] text-[#787C72]">
+            <span class="font-bold text-[#A87216]">${r.topic}</span>
+            <span>${r.source_name} · ${(r.published_at || '').substring(0, 10)}</span>
+          </div>
+          <strong class="text-sm font-bold text-[#1F221B] block">${r.title || 'Statement'}</strong>
+          <p class="text-[#62665D] line-clamp-2 leading-relaxed">${r.content}</p>
+          ${r.url ? `<a href="${r.url}" target="_blank" class="text-[11px] text-[#3B7EA1] hover:underline pt-1 inline-block">View original &rarr;</a>` : ''}
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function changePage(d) {
+      loadArchive(figmaData.archivePage + d);
+    }
+
+    // ========================================================
+    // MODALS: DATE FILTER, TIMELINE & SCORE
+    // ========================================================
+    function openDateModal() {
+      document.getElementById('date-modal').classList.remove('hidden');
+    }
+    function closeDateModal() {
+      document.getElementById('date-modal').classList.add('hidden');
+    }
+    let activeStartDate = null;
+    let activeEndDate = null;
+
+    function applyDatePreset(type) {
+      if (type === 'all') {
+        updateDashboardForDateRange(null, null, 'Choose dates');
+      } else if (type === 'loi') {
+        updateDashboardForDateRange('2025-04-01', '2025-05-31', '1 Apr–31 May 2025');
+      } else if (type === 'vorplanung') {
+        updateDashboardForDateRange('2026-07-01', '2026-08-31', '1 Jul–31 Aug 2026');
+      }
+      closeDateModal();
+    }
+
+    function applyCustomDate() {
+      const f = document.getElementById('date-from').value;
+      const t = document.getElementById('date-to').value;
+      updateDashboardForDateRange(f, t, `${f} – ${t}`);
+      closeDateModal();
+    }
+
+    async function updateDashboardForDateRange(startDate, endDate, label) {
+      activeStartDate = startDate;
+      activeEndDate = endDate;
+      const pill = document.getElementById('active-date-pill-text');
+      if (pill) pill.textContent = label;
+
+      let url = '/api/summary';
+      const params = [];
+      if (startDate) params.push(`start_date=${startDate}`);
+      if (endDate) params.push(`end_date=${endDate}`);
+      if (params.length > 0) url += `?${params.join('&')}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        // 1. Total matches
+        figmaData.totalMatches = data.total_filtered_candidates;
+        const centerCountEl = document.getElementById('svg-center-count');
+        if (centerCountEl) centerCountEl.textContent = data.total_filtered_candidates;
+
+        // 2. Map backend topics to figmaData.topics
+        const topicNameMap = {
+          'Cost & Funding': 'Cost & funding',
+          'Accessibility & Stations': 'Accessibility',
+          'Bus & Transit Connections': 'Bus connections',
+          'Travel Time & Commute': 'Travel time',
+          'Environment & Living Privacy': 'Environment',
+          'Other & Unclassified': 'Other / unclassified'
+        };
+
+        const serverTopics = {};
+        (data.topics || []).forEach(t => {
+          serverTopics[t.name] = t;
+        });
+
+        figmaData.topics.forEach(ft => {
+          let matched = null;
+          for (const [sKey, fKey] of Object.entries(topicNameMap)) {
+            if (fKey.toLowerCase() === ft.name.toLowerCase() && serverTopics[sKey]) {
+              matched = serverTopics[sKey];
+              break;
+            }
+          }
+          if (matched) {
+            ft.count = matched.count;
+            ft.pct = matched.percentage;
+          } else {
+            ft.count = 0;
+            ft.pct = 0;
+          }
+        });
+
+        // 3. Re-render SVG Donut with dynamic percentages & counts
+        renderDonutSVG();
+
+        // 4. Update Support Score card
+        const scoreEl = document.getElementById('card-score-value');
+        if (scoreEl) {
+          scoreEl.textContent = (data.average_support_score || 6.25) + ' / 10';
+        }
+        const scoreSub = document.getElementById('card-score-subtext');
+        if (scoreSub) {
+          scoreSub.textContent = `${data.total_filtered_candidates} mentions in selected period`;
+        }
+
+        // 5. Update What the archive contains card
+        const archiveCards = document.querySelectorAll('#view-overview .f-card');
+        const archiveCard = archiveCards[archiveCards.length - 1];
+        if (archiveCard) {
+          const pElements = archiveCard.querySelectorAll('p');
+          if (pElements.length >= 4) {
+            const dateStr = startDate ? `${startDate}–${endDate || 'Present'}` : '19 Oct 2024–27 Oct 2026';
+            pElements[0].textContent = `${dateStr} · 39,361 records · 7 online references`;
+            pElements[1].textContent = `${data.total_filtered_candidates} Heilbronn + Seilbahn matches in timeframe`;
+            
+            const costCount = (serverTopics['Cost & Funding'] || {}).count || 0;
+            const accessCount = (serverTopics['Accessibility & Stations'] || {}).count || 0;
+            const connCount = (serverTopics['Bus & Transit Connections'] || {}).count || 0;
+            const travelCount = (serverTopics['Travel Time & Commute'] || {}).count || 0;
+            pElements[2].textContent = `Keyword signals · ${costCount} cost/funding · ${accessCount} accessibility · ${connCount} connections · ${travelCount} travel time`;
+          }
+        }
+
+        // 6. If Archive tab is active, reload with new dates
+        if (!document.getElementById('view-archive').classList.contains('hidden')) {
+          loadArchive(1);
+        }
+
+      } catch (err) {
+        console.error('Failed to update dashboard for date range:', err);
+      }
+    }
+
+    function openScoreModal() {
+      document.getElementById('score-modal').classList.remove('hidden');
+      renderScoreCanvas();
+    }
+    function closeScoreModal() {
+      document.getElementById('score-modal').classList.add('hidden');
+    }
+    function renderScoreCanvas() {
+      const ctx = document.getElementById('scoreDistCanvas');
+      if (!ctx) return;
+      if (scoreDistInstance) scoreDistInstance.destroy();
+      scoreDistInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+          datasets: [{
+            data: [2, 6, 8, 14, 18, 14, 45, 91, 105, 54, 30],
+            backgroundColor: '#F2CD68',
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+            y: { grid: { color: '#EAE6DC' }, ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    function openTimelineModal() {
+      document.getElementById('timeline-modal').classList.remove('hidden');
+      renderTimelineCanvas();
+    }
+    function closeTimelineModal() {
+      document.getElementById('timeline-modal').classList.add('hidden');
+    }
+    function renderTimelineCanvas() {
+      const ctx = document.getElementById('timelineChartCanvas');
+      if (!ctx) return;
+      if (timelineInstance) timelineInstance.destroy();
+      timelineInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Oct 24', 'Dec 24', 'Feb 25', 'Apr 25 (Council)', 'May 25 (LOI)', 'Aug 25', 'Nov 25', 'Feb 26', 'May 26', 'Jul 26 (Vorplanung)', 'Oct 26'],
+          datasets: [
+            {
+              label: 'News Articles',
+              data: [12, 18, 22, 145, 120, 28, 32, 24, 42, 168, 52],
+              backgroundColor: '#1F221B',
+              borderRadius: 4
+            },
+            {
+              label: 'Social & Citizen Comments',
+              data: [8, 10, 15, 68, 85, 14, 18, 12, 25, 95, 34],
+              backgroundColor: '#F2CD68',
+              borderRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: { stacked: true, grid: { color: '#EAE6DC' } }
+          }
+        }
+      });
+    }
+
+    // ========================================================
+    // CITY & PROJECT COMPARISON (PILLAR 2: COMPARE)
+    // ========================================================
+    let compareDataCache = null;
+    let insightsDataCache = null;
+
+    async function renderCompareView() {
+      const grid = document.getElementById('compare-cards-grid');
+      const tableBody = document.getElementById('compare-matrix-body');
+      if (!grid || !tableBody) return;
+
+      if (!compareDataCache) {
+        try {
+          const res = await fetch('/api/compare');
+          compareDataCache = await res.json();
+        } catch (e) {
+          console.error('Failed to load compare data:', e);
+          return;
+        }
+      }
+
+      const projects = compareDataCache.projects || [];
+
+      grid.innerHTML = projects.map(p => {
+        let badgeColor = 'bg-[#FAF2DC] text-[#A87216]';
+        if (p.stage_badge.includes('Operating')) badgeColor = 'bg-[#EBF5EA] text-[#2B602E]';
+        else if (p.stage_badge.includes('Contested') || p.stage_badge.includes('Legal')) badgeColor = 'bg-[#FCE8E8] text-[#9A2222]';
+        else if (p.stage_badge.includes('Ecosystem')) badgeColor = 'bg-[#EBF1F5] text-[#3B7EA1]';
+
+        let scoreBadge = 'bg-[#FAF2DC] text-[#A87216]';
+        if (p.support_score >= 7.0) scoreBadge = 'bg-[#EBF5EA] text-[#2B602E]';
+        else if (p.support_score <= 5.5) scoreBadge = 'bg-[#FCE8E8] text-[#9A2222]';
+
+        return `
+          <div class="f-card p-6 space-y-4">
+            <div class="flex items-start justify-between gap-2 border-b border-[#ECE7DC] pb-3">
+              <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-[#787C72]">${escapeHtml(p.city)}</span>
+                <h3 class="text-lg font-bold text-[#1F221B] mt-0.5">${escapeHtml(p.name)}</h3>
+              </div>
+              <div class="flex flex-col items-end gap-1">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${badgeColor}">
+                  ${escapeHtml(p.stage_badge)}
+                </span>
+                <span class="px-2 py-0.5 rounded text-[11px] font-bold ${scoreBadge}">
+                  Score: ${p.support_score} / 10
+                </span>
+              </div>
+            </div>
+
+            <!-- Key Specs Strip -->
+            <div class="grid grid-cols-3 gap-2 py-2 px-3 rounded-xl bg-[#FAF8F2] border border-[#ECE7DC] text-center text-xs">
+              <div>
+                <span class="text-[10px] text-[#8C9086] block">Travel Time</span>
+                <strong class="text-[#1F221B] text-[11px]">${escapeHtml(p.travel_time)}</strong>
+              </div>
+              <div>
+                <span class="text-[10px] text-[#8C9086] block">Length &amp; Stops</span>
+                <strong class="text-[#1F221B] text-[11px]">${p.length_km ? p.length_km + ' km · ' : ''}${p.stations_count} stops</strong>
+              </div>
+              <div>
+                <span class="text-[10px] text-[#8C9086] block">Est. Budget</span>
+                <strong class="text-[#1F221B] text-[11px]">${escapeHtml(p.estimated_cost)}</strong>
+              </div>
+            </div>
+
+            <div class="space-y-2 text-xs">
+              <div>
+                <strong class="text-[#1F221B] block mb-0.5">Primary Transit Driver:</strong>
+                <p class="text-[#62665D] leading-relaxed">${escapeHtml(p.primary_driver)}</p>
+              </div>
+              <div>
+                <strong class="text-[#9A2222] block mb-0.5">Top Public Concern:</strong>
+                <p class="text-[#62665D] leading-relaxed">${escapeHtml(p.top_public_concern)}</p>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-[#FAF8F2] border border-[#ECE7DC] text-xs">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-[#A87216] block mb-1">Key Lesson for Heilbronn</span>
+              <p class="text-[#1F221B] leading-snug">${escapeHtml(p.key_takeaway_for_heilbronn)}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      tableBody.innerHTML = projects.map(p => `
+        <tr class="hover:bg-[#FAF8F2] transition">
+          <td class="py-3 px-3 font-bold">${escapeHtml(p.name)}<br><span class="text-[10px] font-normal text-[#787C72]">${escapeHtml(p.city)}</span></td>
+          <td class="py-3 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-[#EAE6DC] font-semibold">${escapeHtml(p.stage_badge)}</span></td>
+          <td class="py-3 px-3 text-[#62665D] max-w-xs">${escapeHtml(p.primary_driver)}</td>
+          <td class="py-3 px-3 text-[#9A2222] max-w-xs">${escapeHtml(p.top_public_concern)}</td>
+          <td class="py-3 px-3 text-[#62665D]">${escapeHtml(p.tariff_model)}</td>
+          <td class="py-3 px-3 font-bold text-[#1F221B]">${p.support_score} / 10</td>
+        </tr>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    // ========================================================
+    // 5 KEY POLICY INSIGHTS (DELIVERABLE 8)
+    // ========================================================
+    async function renderInsightsView() {
+      const container = document.getElementById('insights-list-container');
+      if (!container) return;
+
+      if (!insightsDataCache) {
+        try {
+          const res = await fetch('/api/insights');
+          insightsDataCache = await res.json();
+        } catch (e) {
+          console.error('Failed to load insights data:', e);
+          return;
+        }
+      }
+
+      const insights = insightsDataCache.insights || [];
+
+      container.innerHTML = insights.map(ins => `
+        <div class="f-card p-7 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#ECE7DC] pb-3">
+            <div class="flex items-center space-x-3">
+              <span class="w-8 h-8 rounded-full bg-[#1F221B] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                0${ins.number}
+              </span>
+              <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-[#A87216]">${escapeHtml(ins.tag)}</span>
+                <h3 class="text-base font-bold text-[#1F221B]">${escapeHtml(ins.title)}</h3>
+              </div>
+            </div>
+            <span class="px-3 py-1 rounded-full text-xs font-bold bg-[#FAF2DC] text-[#A87216] self-start sm:self-center">
+              Verified Finding
+            </span>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-[#FAF8F2] border border-[#ECE7DC] text-xs">
+            <strong class="text-[#1F221B] block mb-1">Empirical Finding:</strong>
+            <p class="text-[#62665D] leading-relaxed">${escapeHtml(ins.core_finding)}</p>
+          </div>
+
+          <div class="text-xs text-[#62665D] leading-relaxed">
+            <strong class="text-[#1F221B] block mb-1">Data Evidence &amp; Benchmark Context:</strong>
+            <p>${escapeHtml(ins.evidence)}</p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-[#EBF5EA] border border-[#D5EAD3] text-xs space-y-1">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-[#2B602E] block">
+              Strategic City Council Action:
+            </span>
+            <p class="text-[#1F221B] font-semibold leading-snug">
+              ${escapeHtml(ins.policy_recommendation)}
+            </p>
+          </div>
+        </div>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    // ========================================================
+    // SUPPORT SCORE OVER TIME GRAPH (CHART.JS)
+    // ========================================================
+    let scoreOverTimeChartInstance = null;
+
+    async function renderScoreOverTimeChart() {
+      const canvas = document.getElementById('scoreOverTimeCanvas');
+      if (!canvas) return;
+
+      try {
+        const res = await fetch('/api/charts/score-over-time');
+        const data = await res.json();
+        const series = data.series || [];
+        if (!series.length) return;
+
+        const labels = series.map(s => s.label);
+        const scores = series.map(s => s.avg_score);
+        const baseline = series.map(() => 5.0);
+
+        if (scoreOverTimeChartInstance) {
+          scoreOverTimeChartInstance.destroy();
+        }
+
+        const ctx = canvas.getContext('2d');
+        scoreOverTimeChartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Mean Support Score',
+                data: scores,
+                borderColor: '#E8A938',
+                backgroundColor: 'rgba(232, 169, 56, 0.08)',
+                borderWidth: 2.5,
+                pointBackgroundColor: series.map(s => s.milestone ? '#1F221B' : '#E8A938'),
+                pointBorderColor: '#FFFFFF',
+                pointBorderWidth: 2,
+                pointRadius: series.map(s => s.milestone ? 6 : 3.5),
+                pointHoverRadius: 7,
+                tension: 0.3,
+                fill: true
+              },
+              {
+                label: 'Neutral Baseline (5.0)',
+                data: baseline,
+                borderColor: '#8C9086',
+                borderWidth: 1.5,
+                borderDash: [5, 5],
+                pointRadius: 0,
+                fill: false
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              mode: 'index',
+              intersect: false
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#1F221B',
+                titleColor: '#FFFFFF',
+                bodyColor: '#F5F5F0',
+                padding: 10,
+                cornerRadius: 8,
+                callbacks: {
+                  label: function(context) {
+                    const idx = context.dataIndex;
+                    const item = series[idx];
+                    if (context.datasetIndex === 0) {
+                      let text = `Support Score: ${item.avg_score} / 10 (${item.count} statements)`;
+                      if (item.milestone) {
+                        text += ` · ★ ${item.milestone}`;
+                      }
+                      return text;
+                    }
+                    return 'Neutral Line (5.0)';
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: {
+                  font: { size: 10 },
+                  color: '#787C72',
+                  maxRotation: 45
+                }
+              },
+              y: {
+                min: 0,
+                max: 10,
+                grid: { color: '#EAE6DC' },
+                ticks: {
+                  stepSize: 2,
+                  font: { size: 10 },
+                  color: '#787C72'
+                }
+              }
+            }
+          }
+        });
+      } catch (err) {
+        console.error('Failed to load score over time chart:', err);
+      }
+    }
+
+    // ========================================================
+    // MANUAL LABELING & NLP REVIEW WORKBENCH
+    // ========================================================
+    let labelingMode = 'unclassified';
+    let labelingPage = 1;
+    let labelingSearch = '';
+    let labelingItems = [];
+    let selectedItem = null;
+    let labelingDebounceTimer = null;
+
+    const ALL_TOPICS = [
+      'Cost & Funding',
+      'Accessibility & Stations',
+      'Bus & Transit Connections',
+      'Travel Time & Commute',
+      'Environmental & Urban Impact',
+      'Noise & Visual Impact',
+      'Capacity & Crowding',
+      'Safety & Reliability',
+      'Other & Unclassified'
+    ];
+
+    const ARGUMENT_CLASSES_LIST = [
+      { id: 'economic_benefit', label: 'Economic & Regional Growth' },
+      { id: 'traffic_relief', label: 'Traffic & Bridge Congestion Relief' },
+      { id: 'high_investment_cost', label: 'High Capital & Operational Cost' },
+      { id: 'visual_impact', label: 'Visual & Privacy Intrusion' },
+      { id: 'accessibility_gain', label: 'Direct Barrier-Free Access' },
+      { id: 'fast_commute', label: 'Fast 14-min Commute to IPAI' },
+      { id: 'environmental_preservation', label: 'Clean Electric Zero-Emission' },
+      { id: 'alternative_transit_better', label: 'Bus / Tram Expansion Better' }
+    ];
+
+    function initLabelingWorkbench() {
+      labelingPage = 1;
+      fetchLabelingQueue();
+    }
+
+    function setLabelingMode(mode) {
+      labelingMode = mode;
+      labelingPage = 1;
+
+      // Update button styles
+      ['unclassified', 'all', 'reviewed'].forEach(m => {
+        const btn = document.getElementById(`btn-mode-${m}`);
+        if (btn) {
+          btn.className = (m === mode ? 'f-pill-dark' : 'f-pill-light') + ' text-xs py-1.5';
+        }
+      });
+
+      fetchLabelingQueue();
+    }
+
+    function debounceLabelingSearch() {
+      clearTimeout(labelingDebounceTimer);
+      labelingDebounceTimer = setTimeout(() => {
+        const input = document.getElementById('labeling-search-input');
+        labelingSearch = input ? input.value.trim() : '';
+        labelingPage = 1;
+        fetchLabelingQueue();
+      }, 250);
+    }
+
+    function changeQueuePage(delta) {
+      labelingPage += delta;
+      if (labelingPage < 1) labelingPage = 1;
+      fetchLabelingQueue();
+    }
+
+    async function fetchLabelingQueue() {
+      const listEl = document.getElementById('queue-items-list');
+      const countEl = document.getElementById('queue-count-label');
+      const pageEl = document.getElementById('queue-page-label');
+      const btnPrev = document.getElementById('btn-queue-prev');
+      const btnNext = document.getElementById('btn-queue-next');
+
+      if (countEl) countEl.textContent = 'Loading...';
+
+      try {
+        const url = `/api/labeling/queue?mode=${encodeURIComponent(labelingMode)}&page=${labelingPage}&limit=10&q=${encodeURIComponent(labelingSearch)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        // Update Stats Counters
+        if (data.stats) {
+          const uncEl = document.getElementById('badge-unclassified-count');
+          const revEl = document.getElementById('badge-reviewed-count');
+          if (uncEl) uncEl.textContent = `${data.stats.total_unclassified} Needs Review`;
+          if (revEl) revEl.textContent = `${data.stats.total_reviewed} Reviewed`;
+        }
+
+        const totalPages = data.total_pages || data.pages || 1;
+        if (countEl) countEl.textContent = `${data.total} records found`;
+        if (pageEl) pageEl.textContent = `Page ${data.page} of ${Math.max(1, totalPages)}`;
+        if (btnPrev) btnPrev.disabled = data.page <= 1;
+        if (btnNext) btnNext.disabled = data.page >= totalPages;
+
+        labelingItems = data.items || data.records || [];
+        renderQueueList();
+
+        // Auto-select first item if current selection isn't in current list
+        if (labelingItems.length > 0) {
+          const exists = selectedItem && labelingItems.some(it => it.mention_id === selectedItem.mention_id);
+          if (!exists) {
+            selectQueueItem(labelingItems[0]);
+          } else {
+            // Keep current item refreshed from latest payload
+            const refreshed = labelingItems.find(it => it.mention_id === selectedItem.mention_id);
+            if (refreshed) selectQueueItem(refreshed);
+          }
+        } else {
+          selectedItem = null;
+          renderEmptyEditor();
+        }
+      } catch (err) {
+        console.error('Failed to fetch labeling queue:', err);
+        if (countEl) countEl.textContent = 'Error loading queue';
+      }
+    }
+
+    function renderQueueList() {
+      const listEl = document.getElementById('queue-items-list');
+      if (!listEl) return;
+
+      if (!labelingItems.length) {
+        listEl.innerHTML = `<div class="p-6 text-center text-[#8C9086] text-xs">No records matching the selected queue filter.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = labelingItems.map(item => {
+        const isSelected = selectedItem && selectedItem.mention_id === item.mention_id;
+        const activeClass = isSelected 
+          ? 'bg-white border-[#1F221B] shadow-sm ring-1 ring-[#1F221B]' 
+          : 'bg-[#FAF8F2] border-[#ECE7DC] hover:border-[#D0C8B8]';
+
+        let stanceBadgeClass = 'bg-[#EAE6DC] text-[#62665D]';
+        if (item.stance === 'support') stanceBadgeClass = 'bg-[#EBF5EA] text-[#2B602E]';
+        else if (item.stance === 'oppose') stanceBadgeClass = 'bg-[#FCE8E8] text-[#9A2222]';
+        else if (item.stance === 'neutral') stanceBadgeClass = 'bg-[#FAF2DC] text-[#A87216]';
+
+        const humanBadge = item.human_reviewed 
+          ? `<span class="inline-flex items-center space-x-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#EBF5EA] text-[#2B602E]"><i data-lucide="check" class="w-3 h-3"></i><span>Verified</span></span>`
+          : `<span class="inline-flex items-center text-[10px] text-[#8C9086] px-1.5 py-0.5 rounded bg-[#ECE7DC]">NLP Auto</span>`;
+
+        const titleText = (item.title || item.content || 'Untitled').slice(0, 75);
+
+        return `
+          <div onclick="onQueueCardClicked('${item.mention_id}')" 
+            class="p-3 rounded-xl border transition cursor-pointer text-left ${activeClass}">
+            <div class="flex items-center justify-between gap-1 mb-1.5">
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${stanceBadgeClass} capitalize">
+                ${item.stance || 'unclear'}
+              </span>
+              <div class="flex items-center space-x-1">
+                ${humanBadge}
+                <span class="text-[10px] font-mono text-[#8C9086]">${item.published_at || ''}</span>
+              </div>
+            </div>
+            <div class="font-bold text-[#1F221B] line-clamp-2 leading-snug">
+              ${escapeHtml(titleText)}
+            </div>
+            <div class="flex items-center justify-between mt-2 text-[11px] text-[#787C72]">
+              <span class="truncate max-w-[170px]">${escapeHtml(item.source_name || 'Source')}</span>
+              <span class="font-semibold text-[#1F221B]">Score: ${item.support_score ?? '—'}/10</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function onQueueCardClicked(mentionId) {
+      const item = labelingItems.find(it => it.mention_id === mentionId);
+      if (item) selectQueueItem(item);
+    }
+
+    function selectQueueItem(item) {
+      selectedItem = item;
+      renderQueueList();
+      renderEditorForm();
+    }
+
+    function renderEmptyEditor() {
+      const panel = document.getElementById('labeling-editor-panel');
+      if (!panel) return;
+      panel.innerHTML = `
+        <div class="text-center py-16 text-[#8C9086] text-xs">
+          Select an item from the queue on the left to inspect and assign manual labels.
+        </div>
+      `;
+    }
+
+    function renderEditorForm() {
+      const panel = document.getElementById('labeling-editor-panel');
+      if (!panel || !selectedItem) return;
+
+      const currentScore = selectedItem.support_score ?? 6.0;
+      const currentClasses = Array.isArray(selectedItem.argument_classes) ? selectedItem.argument_classes : [];
+
+      const topicOptions = ALL_TOPICS.map(top => {
+        const selected = (selectedItem.topic === top) ? 'selected' : '';
+        return `<option value="${escapeHtml(top)}" ${selected}>${escapeHtml(top)}</option>`;
+      }).join('');
+
+      const argumentCheckboxes = ARGUMENT_CLASSES_LIST.map(arg => {
+        const checked = currentClasses.includes(arg.id) ? 'checked' : '';
+        return `
+          <label class="flex items-center space-x-2 p-2 rounded-lg bg-[#FAF8F2] border border-[#ECE7DC] text-xs cursor-pointer hover:border-[#D0C8B8]">
+            <input type="checkbox" name="arg_class" value="${arg.id}" ${checked} class="accent-[#1F221B] rounded">
+            <span class="text-[#1F221B]">${arg.label}</span>
+          </label>
+        `;
+      }).join('');
+
+      const sourceLink = selectedItem.url 
+        ? `<a href="${selectedItem.url}" target="_blank" rel="noopener" class="text-[#A87216] hover:underline inline-flex items-center space-x-1 font-semibold"><span>Open Original Source</span><i data-lucide="external-link" class="w-3.5 h-3.5"></i></a>`
+        : `<span class="text-[#8C9086]">No URL Available</span>`;
+
+      panel.innerHTML = `
+        <!-- Header Info -->
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-4 border-b border-[#ECE7DC]">
+          <div>
+            <div class="flex items-center space-x-2 text-[11px] text-[#787C72] mb-1">
+              <span class="font-bold text-[#1F221B]">${escapeHtml(selectedItem.source_name || 'Source')}</span>
+              <span>·</span>
+              <span>${selectedItem.media_type_name || 'Online'}</span>
+              <span>·</span>
+              <span>${selectedItem.published_at || 'Date unavailable'}</span>
+            </div>
+            <h3 class="text-base font-bold text-[#1F221B] leading-snug">
+              ${escapeHtml(selectedItem.title || 'Untitled Post / Record')}
+            </h3>
+          </div>
+          <div>
+            ${sourceLink}
+          </div>
+        </div>
+
+        <!-- Content Snippet / Text -->
+        <div class="p-4 rounded-xl bg-[#FAF8F2] border border-[#ECE7DC] text-xs text-[#2A2E25] leading-relaxed max-h-44 overflow-y-auto">
+          "${escapeHtml(selectedItem.content || selectedItem.title || 'No excerpt available.')}"
+        </div>
+
+        <!-- Form Controls -->
+        <div class="space-y-4 pt-1">
+          <!-- Topic Selector -->
+          <div>
+            <label class="block text-xs font-bold text-[#1F221B] mb-1">
+              Topic Category:
+            </label>
+            <select id="editor-topic" class="w-full px-3 py-2 rounded-xl border border-[#ECE7DC] bg-white text-xs text-[#1F221B] focus:outline-none focus:border-[#1F221B]">
+              ${topicOptions}
+            </select>
+          </div>
+
+          <!-- Stance & Support Score Row -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Stance Radios -->
+            <div>
+              <label class="block text-xs font-bold text-[#1F221B] mb-1.5">
+                Expressed Stance:
+              </label>
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <label class="flex items-center space-x-2 p-2 rounded-lg border border-[#ECE7DC] cursor-pointer hover:bg-[#FAF8F2]">
+                  <input type="radio" name="editor-stance" value="support" ${selectedItem.stance === 'support' ? 'checked' : ''} class="accent-[#2B602E]">
+                  <span class="font-semibold text-[#2B602E]">Support</span>
+                </label>
+                <label class="flex items-center space-x-2 p-2 rounded-lg border border-[#ECE7DC] cursor-pointer hover:bg-[#FAF8F2]">
+                  <input type="radio" name="editor-stance" value="oppose" ${selectedItem.stance === 'oppose' ? 'checked' : ''} class="accent-[#9A2222]">
+                  <span class="font-semibold text-[#9A2222]">Oppose</span>
+                </label>
+                <label class="flex items-center space-x-2 p-2 rounded-lg border border-[#ECE7DC] cursor-pointer hover:bg-[#FAF8F2]">
+                  <input type="radio" name="editor-stance" value="neutral" ${selectedItem.stance === 'neutral' ? 'checked' : ''} class="accent-[#A87216]">
+                  <span class="font-semibold text-[#A87216]">Neutral</span>
+                </label>
+                <label class="flex items-center space-x-2 p-2 rounded-lg border border-[#ECE7DC] cursor-pointer hover:bg-[#FAF8F2]">
+                  <input type="radio" name="editor-stance" value="unclear" ${(!selectedItem.stance || selectedItem.stance === 'unclear') ? 'checked' : ''} class="accent-[#62665D]">
+                  <span class="font-semibold text-[#62665D]">Unclear</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Support Score Slider (0 to 10) -->
+            <div>
+              <div class="flex justify-between items-center mb-1.5">
+                <label class="text-xs font-bold text-[#1F221B]">Support Score (0 to 10):</label>
+                <span id="score-slider-badge" class="px-2 py-0.5 rounded text-xs font-bold bg-[#FAF2DC] text-[#A87216]">
+                  ${currentScore} / 10
+                </span>
+              </div>
+              <input type="range" id="editor-score-slider" min="0" max="10" step="0.5" value="${currentScore}"
+                oninput="onScoreSliderChanged(this.value)"
+                class="w-full accent-[#1F221B] cursor-pointer mt-2">
+              <div class="flex justify-between text-[10px] text-[#8C9086] mt-1">
+                <span>0 (Opposed)</span>
+                <span>5 (Neutral)</span>
+                <span>10 (Full Support)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Multi-label Argument Classes -->
+          <div>
+            <label class="block text-xs font-bold text-[#1F221B] mb-1.5">
+              Multi-label Argument Classes:
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              ${argumentCheckboxes}
+            </div>
+          </div>
+
+          <!-- Stakeholder Direction & Notes -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-[#1F221B] mb-1">
+                Origin / Stakeholder:
+              </label>
+              <select id="editor-direction" class="w-full px-3 py-2 rounded-xl border border-[#ECE7DC] bg-white text-xs text-[#1F221B] focus:outline-none">
+                <option value="citizen" ${selectedItem.direction === 'citizen' ? 'selected' : ''}>Citizen / Public Comment</option>
+                <option value="city_official" ${selectedItem.direction === 'city_official' ? 'selected' : ''}>City Official / Council</option>
+                <option value="expert_study" ${selectedItem.direction === 'expert_study' ? 'selected' : ''}>Expert / Engineering Study</option>
+                <option value="business_stakeholder" ${selectedItem.direction === 'business_stakeholder' ? 'selected' : ''}>Business / Association</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-[#1F221B] mb-1">
+                Human Reviewer Notes:
+              </label>
+              <input type="text" id="editor-notes" value="${escapeHtml(selectedItem.review_notes || '')}" placeholder="Optional verification notes..."
+                class="w-full px-3 py-2 rounded-xl border border-[#ECE7DC] bg-white text-xs text-[#1F221B] focus:outline-none">
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center justify-between pt-4 border-t border-[#ECE7DC]">
+            <button onclick="removeCurrentRecord()" type="button" class="text-xs text-[#9A2222] hover:underline flex items-center space-x-1">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              <span>Exclude from Project</span>
+            </button>
+            <div class="flex items-center space-x-3">
+              <span id="save-status-msg" class="text-xs font-semibold text-[#2B602E] hidden">✓ Saved</span>
+              <button onclick="saveCurrentLabel()" id="btn-save-label" type="button" class="f-pill-dark text-xs py-2 px-5 flex items-center space-x-2">
+                <i data-lucide="check" class="w-4 h-4"></i>
+                <span>Save &amp; Human Verify</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      lucide.createIcons();
+    }
+
+    function onScoreSliderChanged(val) {
+      const badge = document.getElementById('score-slider-badge');
+      if (badge) {
+        badge.textContent = `${val} / 10`;
+        const num = parseFloat(val);
+        if (num >= 7) badge.className = 'px-2 py-0.5 rounded text-xs font-bold bg-[#EBF5EA] text-[#2B602E]';
+        else if (num <= 4) badge.className = 'px-2 py-0.5 rounded text-xs font-bold bg-[#FCE8E8] text-[#9A2222]';
+        else badge.className = 'px-2 py-0.5 rounded text-xs font-bold bg-[#FAF2DC] text-[#A87216]';
+      }
+    }
+
+    async function saveCurrentLabel() {
+      if (!selectedItem) return;
+
+      const topicSelect = document.getElementById('editor-topic');
+      const stanceRadio = document.querySelector('input[name="editor-stance"]:checked');
+      const scoreSlider = document.getElementById('editor-score-slider');
+      const directionSelect = document.getElementById('editor-direction');
+      const notesInput = document.getElementById('editor-notes');
+      const checkedClasses = Array.from(document.querySelectorAll('input[name="arg_class"]:checked')).map(cb => cb.value);
+
+      const payload = {
+        mention_id: selectedItem.mention_id,
+        topic: topicSelect ? topicSelect.value : selectedItem.topic,
+        stance: stanceRadio ? stanceRadio.value : (selectedItem.stance || 'unclear'),
+        support_score: scoreSlider ? parseFloat(scoreSlider.value) : (selectedItem.support_score || 5.0),
+        argument_classes: checkedClasses,
+        direction: directionSelect ? directionSelect.value : 'citizen',
+        notes: notesInput ? notesInput.value.trim() : ''
+      };
+
+      const btn = document.getElementById('btn-save-label');
+      if (btn) btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/label', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const resData = await res.json();
+
+        const statusMsg = document.getElementById('save-status-msg');
+        if (statusMsg) {
+          statusMsg.classList.remove('hidden');
+          setTimeout(() => statusMsg.classList.add('hidden'), 2500);
+        }
+
+        // Update local object
+        selectedItem.topic = payload.topic;
+        selectedItem.stance = payload.stance;
+        selectedItem.support_score = payload.support_score;
+        selectedItem.argument_classes = payload.argument_classes;
+        selectedItem.direction = payload.direction;
+        selectedItem.review_notes = payload.notes;
+        selectedItem.human_reviewed = 1;
+
+        // Refresh overview dashboard data in background so donut & counters reflect verified item
+        fetchBackendData();
+        updateDashboardForDateRange(null, null, 'Updated');
+
+        // Reload queue
+        await fetchLabelingQueue();
+      } catch (err) {
+        console.error('Failed to save label:', err);
+        alert('Failed to save label: ' + err.message);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function removeCurrentRecord() {
+      if (!selectedItem) return;
+      if (!confirm(`Are you sure you want to exclude record "${selectedItem.title || selectedItem.mention_id}" from Seilbronn analysis?`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/labeling/remove', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mention_id: selectedItem.mention_id,
+            reason: 'Manually excluded by reviewer in workbench'
+          })
+        });
+        await res.json();
+
+        // Refresh dashboard and queue
+        fetchBackendData();
+        updateDashboardForDateRange(null, null, 'Updated');
+        selectedItem = null;
+        await fetchLabelingQueue();
+      } catch (err) {
+        console.error('Failed to remove record:', err);
+        alert('Failed to exclude record: ' + err.message);
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
