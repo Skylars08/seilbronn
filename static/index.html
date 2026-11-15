@@ -558,7 +558,7 @@
         <span class="text-[11px] font-bold uppercase tracking-wider text-[#8C9086]">TRANSIT CORRIDOR</span>
         <h2 class="text-2xl font-bold text-[#1F221B]">Proposed Route &amp; 6 Stops</h2>
         <p class="text-xs text-[#62665D] mt-1">
-          About 5 km from Innenstadt to IPAI Campus, with an end-to-end planning target of about 14–15 minutes. The alignment remains under review. <a class="underline" href="https://www.heilbronn.de/umwelt-mobilitaet/mobilitaet/seilbahn.html">City route details</a>.
+          The city’s FAQ lists 4.7 km, rounded to about 5 km in its corridor overview, and targets about 15 minutes end to end. The council approved preliminary planning on 27 July 2026. Detailed design and the approval process are still ahead. <a class="underline" href="https://www.heilbronn.de/umwelt-mobilitaet/mobilitaet/seilbahn.html">City route details</a>.
         </p>
       </div>
 
@@ -568,7 +568,7 @@
       </div>
 
       <!-- Active Stop Details Card -->
-      <div class="f-card p-8 space-y-5" id="active-stop-card">
+      <div class="f-card p-8 space-y-5" id="active-stop-card" aria-live="polite">
         <!-- Injected via JS -->
       </div>
     </div>
@@ -1249,8 +1249,23 @@
         return;
       }
       card.innerHTML = `
-        <h3 class="text-2xl font-bold text-[#1F221B]">${escapeHtml(stop.name)}</h3>
-        <p class="text-sm text-[#62665D]">${escapeHtml(stop.subtitle)}</p>
+        <div class="space-y-2">
+          <span class="inline-block rounded-full bg-[#FAF2DC] px-3 py-1 text-xs font-semibold text-[#765014]">${escapeHtml(stop.status)}</span>
+          <h3 class="text-2xl font-bold text-[#1F221B]">${escapeHtml(stop.name)}</h3>
+          <p class="text-sm text-[#62665D]">${escapeHtml(stop.subtitle)}</p>
+          <p class="text-sm text-[#62665D]">Part of the city’s preferred corridor. Final station design and connections are subject to detailed planning.</p>
+        </div>
+        <div class="space-y-2">
+          <h4 class="text-lg">Planning topics for this stop</h4>
+          <p class="text-sm text-[#62665D]">Questions to explore during planning.</p>
+          <ul class="grid gap-3 sm:grid-cols-2">
+            ${stop.planning_topics.map(topic => `
+              <li class="rounded-xl border border-[#ECE7DC] bg-[#FAF8F2] p-4">
+                <strong class="block">${escapeHtml(topic.title)}</strong>
+                <p class="text-sm text-[#62665D]">${escapeHtml(topic.question)}</p>
+              </li>`).join('')}
+          </ul>
+        </div>
       `;
     }
 

@@ -106,7 +106,7 @@ VERIFIED_MILESTONES = [
         "event_date": "2026-08-14",
         "publisher": "TechZeitGeist",
         "title": "Urbane Seilbahn Heilbronn: 14 Minuten bis zum IPAI",
-        "summary": "Analysis of the 14-minute end-to-end travel time connecting Hauptbahnhof, Neckarbogen, and IPAI tech campus.",
+        "summary": "Travel-time reference for the proposed Innenstadt–IPAI corridor. The city currently targets about 15 minutes end to end.",
         "url": "https://www.techzeitgeist.de/heilbronn-urbane-seilbahn-14-minuten-ipai-vorplanung/",
         "category": "Technical Analysis",
         "impact": "High public visibility on commuting speed and direct connection across the Neckar."
@@ -125,14 +125,63 @@ VERIFIED_MILESTONES = [
 ]
 
 # Stops definitions
-STOPS_DATA = [
-    {"id": "innenstadt", "name": "Innenstadt", "subtitle": "Neckarturm · Kurt-Schumacher-Platz, near Hauptbahnhof"},
-    {"id": "bildungscampus_west", "name": "Bildungscampus West", "subtitle": "Western education campus"},
-    {"id": "wohlgelegen", "name": "Wohlgelegen", "subtitle": "Zukunftspark Wohlgelegen"},
-    {"id": "neckargartacher_bruecke", "name": "Neckargartacher Brücke", "subtitle": "Proposed stop at Neckargartacher Brücke"},
-    {"id": "neckarau", "name": "Neckarau", "subtitle": "Alte Molkerei"},
-    {"id": "ipai_campus", "name": "IPAI Campus", "subtitle": "Proposed northern terminus"},
-]
+STOPS_DATA = [{'id': 'innenstadt',
+  'name': 'Innenstadt',
+  'subtitle': 'Neckarturm · Kurt-Schumacher-Platz, near Hauptbahnhof',
+  'status': 'Proposed stop',
+  'planning_topics': [{'title': 'Train and bus connections',
+                       'question': 'How could passengers transfer between the gondola, Hauptbahnhof and '
+                                   'local buses?'},
+                      {'title': 'Step-free access',
+                       'question': 'How will the station connect to accessible street-level routes '
+                                   'around Kurt-Schumacher-Platz?'}]},
+ {'id': 'bildungscampus_west',
+  'name': 'Bildungscampus West',
+  'subtitle': 'Western education campus',
+  'status': 'Proposed stop',
+  'planning_topics': [{'title': 'Campus access',
+                       'question': 'Which walking and cycling routes should connect the platform to '
+                                   'campus buildings?'},
+                      {'title': 'Peak demand',
+                       'question': 'How much waiting space would be needed at class changeover '
+                                   'times?'}]},
+ {'id': 'wohlgelegen',
+  'name': 'Wohlgelegen',
+  'subtitle': 'Zukunftspark Wohlgelegen',
+  'status': 'Proposed stop',
+  'planning_topics': [{'title': 'Local access',
+                       'question': 'How could the station connect to workplaces and paths in '
+                                   'Zukunftspark Wohlgelegen?'},
+                      {'title': 'Travel time',
+                       'question': 'How would door-to-door journeys compare with existing options?'}]},
+ {'id': 'neckargartacher_bruecke',
+  'name': 'Neckargartacher Brücke',
+  'subtitle': 'Proposed stop at Neckargartacher Brücke',
+  'status': 'Proposed stop',
+  'planning_topics': [{'title': 'Crossing access',
+                       'question': 'How could walking and cycling approaches connect to the station '
+                                   'near the bridge?'},
+                      {'title': 'Alignment and noise',
+                       'question': 'What should route studies check around the bridge and nearby '
+                                   'properties?'}]},
+ {'id': 'neckarau',
+  'name': 'Neckarau',
+  'subtitle': 'Alte Molkerei',
+  'status': 'Proposed stop',
+  'planning_topics': [{'title': 'Local connections',
+                       'question': 'How could the Alte Molkerei stop connect to nearby destinations and '
+                                   'public transport?'},
+                      {'title': 'Street design',
+                       'question': 'Where would pedestrian crossings and cycle parking work best?'}]},
+ {'id': 'ipai_campus',
+  'name': 'IPAI Campus',
+  'subtitle': 'Proposed northern terminus',
+  'status': 'Proposed stop',
+  'planning_topics': [{'title': 'Last-mile access',
+                       'question': 'How could the platform connect to campus entrances and internal '
+                                   'paths?'},
+                      {'title': 'Operating hours',
+                       'question': 'Which service hours would serve staff and visitors?'}]}]
 
 # Topic deep dive data
 TOPICS_KNOWLEDGE = {
@@ -418,7 +467,7 @@ PROJECTS_COMPARISON = [
         "support_score": 6.25,
         "sentiment_label": "Constructive / Favorable",
         "primary_driver": "Grade-separated Neckar river and railway bottleneck bypass connecting Innenstadt to IPAI.",
-        "top_public_concern": "Operating deficit risk & balcony privacy for Neckarbogen residents.",
+        "top_public_concern": "Topics to assess include operating costs and the effect of the final alignment on nearby properties.",
         "tariff_model": "Full Deutschlandticket & HNV zone inclusion (essential demand).",
         "key_takeaway_for_heilbronn": "Baseline project under evaluation. High willingness to ride when framed as everyday commuter transit rather than a tourist ride."
     },
