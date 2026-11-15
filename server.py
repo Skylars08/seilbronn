@@ -1095,10 +1095,15 @@ def get_discussion():
     for row in records:
         medium = row.get("media_type_name")
         body = row.get("content") or row.get("title")
-        title_text = ((row.get("title") or "") + " " + (body or "")).casefold()
+        title = row.get("title") or ""
+        match = re.search(r"heilbronn.{0,80}seilbahn|seilbahn.{0,80}heilbronn", title, re.I)
+        if not match and body:
+            match = re.search(r"heilbronn.{0,80}seilbahn|seilbahn.{0,80}heilbronn", body, re.I)
+            if match:
+                body = body[max(0, match.start() - 45):]
         group = {"news_article": "News", "news": "News", "social_comment": "YouTube Comments"}.get(medium, medium)
         if (medium not in sources or not body or group in used or
-                "heilbronn" not in title_text or "seilbahn" not in title_text):
+                not match):
             continue
         used.add(group)
         selected.append({"source": group, "date": (row.get("published_at") or "")[:10],
