@@ -449,6 +449,14 @@ def get_summary(
         "topics": topics_list,
         "station_mentions": station_counts,
         "timeline": timeline,
+        "milestones": sorted(
+            (
+                milestone for milestone in VERIFIED_MILESTONES
+                if (not start_date or milestone["event_date"] >= start_date[:10])
+                and (not end_date or milestone["event_date"] <= end_date[:10])
+            ),
+            key=lambda milestone: milestone["event_date"],
+        ),
         "date_bounds": {
             "min_date": "2024-01-01",
             "max_date": "2026-11-14"

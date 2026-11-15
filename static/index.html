@@ -48,7 +48,18 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baskervville:wght@400;500;600&display=swap">
   <style>
+    h1, h2, h3, h4 {
+      font-family: Baskervville, Georgia, serif;
+      font-weight: 600 !important;
+      letter-spacing: -0.025em !important;
+    }
+    .f-slice:focus-visible { outline: none; stroke-width: 30; }
+    #donut-leaders-group path { pointer-events: none; }
+    @media (max-width: 639px) {
+      #donut-leaders-group { display: none; }
+    }
     body {
       background: 
         radial-gradient(circle at 92% 30%, #FEF6DF 0%, rgba(254, 246, 223, 0.75) 35%, transparent 70%),
@@ -131,7 +142,8 @@
     .f-slice {
       transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), stroke-width 0.2s ease, filter 0.2s ease;
       cursor: pointer;
-      transform-origin: 200px 200px;
+      transform-origin: 270px 190px;
+      pointer-events: stroke;
     }
     .f-slice:hover {
       transform: scale(1.04);
@@ -232,10 +244,10 @@
         <!-- LEFT CARD: Interactive Thin Donut with Leader Lines (8 Cols) -->
         <div class="lg:col-span-8 f-card p-8 flex flex-col justify-center relative overflow-hidden min-h-[380px]">
           
-          <div class="relative w-full h-[320px] flex items-center justify-center">
+          <div class="relative w-full h-[205px] sm:h-[320px] flex items-center justify-center">
             
             <!-- SVG Donut Chart with Leader Lines & Labels -->
-            <svg id="donut-svg" viewBox="0 0 540 380" class="w-full h-full">
+            <svg id="donut-svg" viewBox="0 0 540 380" aria-label="Discussion topics by record count" class="w-full h-full">
               <!-- Center Count & Matches text -->
               <g class="pointer-events-none text-center">
                 <text x="270" y="195" text-anchor="middle" font-size="34" font-weight="800" fill="#1F221B" id="svg-center-count">269</text>
@@ -255,7 +267,8 @@
 
           </div>
 
-          <div class="text-center text-[11px] text-[#8C9086] pt-1">
+          <div id="donut-mobile-labels" class="grid gap-2 mb-4 sm:hidden"></div>
+          <div class="text-center text-[11px] text-[#73776D] pt-1">
             Click on any slice to view topic arguments and citizen quotes
           </div>
         </div>
@@ -304,37 +317,7 @@
       <div class="f-card p-7">
         <h3 class="text-base font-bold text-[#1F221B] mb-5">Planning milestones</h3>
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <!-- Milestone 1 -->
-          <div>
-            <span class="text-[11px] font-bold uppercase tracking-wider text-[#73776D] block mb-1">
-              03 APR 2025
-            </span>
-            <p class="text-sm font-semibold text-[#1F221B] leading-snug">
-              Council backs further planning
-            </p>
-          </div>
-
-          <!-- Milestone 2 -->
-          <div>
-            <span class="text-[11px] font-bold uppercase tracking-wider text-[#73776D] block mb-1">
-              12 MAY 2025
-            </span>
-            <p class="text-sm font-semibold text-[#1F221B] leading-snug">
-              City and state sign letter of intent
-            </p>
-          </div>
-
-          <!-- Milestone 3 -->
-          <div>
-            <span class="text-[11px] font-bold uppercase tracking-wider text-[#73776D] block mb-1">
-              27 JUL 2026
-            </span>
-            <p class="text-sm font-semibold text-[#1F221B] leading-snug">
-              Council approves preliminary planning
-            </p>
-          </div>
-        </div>
+        <div id="overview-milestones" class="grid grid-cols-1 md:grid-cols-3 gap-6" aria-live="polite"></div>
       </div>
 
       <!-- YELLOW PILL ACTION BUTTON: Explore Timeline & Comparisons -->
@@ -1038,92 +1021,117 @@
       slicesG.innerHTML = '';
       leadersG.innerHTML = '';
 
-      const cx = 270, cy = 190, r = 85, strokeWidth = 24;
-      const circumference = 2 * Math.PI * r;
-      let cumAngle = -90; // start at top
-
-      // Leader coordinates for the 6 slices matching Figma thumbnail exactly
-      const labelPositions = [
-        { label: 'Cost & funding', sub: '36.8% · 99', lx: 380, ly: 125, lnx: 335, lny: 145, align: 'start' },
-        { label: 'Accessibility', sub: '1.5% · 4', lx: 380, ly: 185, lnx: 355, lny: 185, align: 'start' },
-        { label: 'Bus connections', sub: '4.1% · 11', lx: 375, ly: 245, lnx: 335, lny: 235, align: 'start' },
-        { label: 'Travel time', sub: '4.1% · 11', lx: 270, ly: 335, lnx: 270, lny: 285, align: 'middle' },
-        { label: 'Environment', sub: '1.1% · 3', lx: 150, ly: 300, lnx: 205, lny: 250, align: 'end' },
-        { label: 'Other / unclassified', sub: '52.4% · 141', lx: 145, ly: 135, lnx: 205, lny: 145, align: 'end' },
+      const mobile = document.getElementById('donut-mobile-labels');
+      mobile.replaceChildren();
+      const createSvg = (tag, attrs) => {
+        const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+        for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
+        return node;
+      };
+      const point = (angle, radius) => [
+        270 + Math.cos(angle) * radius, 190 + Math.sin(angle) * radius
       ];
+      const topics = figmaData.topics.filter(topic => topic.count > 0);
+      const total = topics.reduce((sum, topic) => sum + topic.count, 0);
+      const sides = [[], []];
+      let angle = -Math.PI / 2;
 
-      figmaData.topics.forEach((t, i) => {
-        const pct = t.pct / 100;
-        const dash = pct * circumference;
-        const offset = -((cumAngle + 90) / 360) * circumference;
-        cumAngle += pct * 360;
-
-        // Donut slice circle
-        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        circle.setAttribute('cx', cx);
-        circle.setAttribute('cy', cy);
-        circle.setAttribute('r', r);
-        circle.setAttribute('fill', 'transparent');
-        circle.setAttribute('stroke', t.color);
-        circle.setAttribute('stroke-width', strokeWidth);
-        circle.setAttribute('stroke-dasharray', `${dash} ${circumference}`);
-        circle.setAttribute('stroke-dashoffset', offset);
-        circle.setAttribute('class', 'f-slice');
-
-        // Hover & click
-        circle.addEventListener('mouseenter', () => {
-          document.getElementById('svg-center-count').textContent = t.count;
-          document.getElementById('svg-center-sub').textContent = `${t.pct}%`;
-        });
-        circle.addEventListener('mouseleave', () => {
+      for (const topic of topics) {
+        const sweep = 2 * Math.PI * topic.count / total;
+        const middle = angle + sweep / 2;
+        const slice = topics.length === 1
+          ? createSvg('circle', { cx: 270, cy: 190, r: 85 })
+          : createSvg('path', {
+              d: `M ${point(angle, 85).join(' ')} A 85 85 0 ${sweep > Math.PI ? 1 : 0} 1 ${point(angle + sweep, 85).join(' ')}`
+            });
+        angle += sweep;
+        const details = `${topic.pct}% · ${topic.count}`;
+        slice.setAttribute('fill', 'none');
+        slice.setAttribute('stroke', topic.color);
+        slice.setAttribute('stroke-width', '24');
+        slice.setAttribute('class', 'f-slice');
+        slice.setAttribute('role', 'button');
+        slice.setAttribute('tabindex', '0');
+        slice.setAttribute('aria-label', `${topic.name}, ${topic.count} records, ${topic.pct}%`);
+        slice.onclick = () => openTopic(topic.name);
+        slice.onkeydown = event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openTopic(topic.name);
+          }
+        };
+        slice.onmouseenter = () => {
+          document.getElementById('svg-center-count').textContent = topic.count;
+          document.getElementById('svg-center-sub').textContent = `${topic.pct}%`;
+        };
+        slice.onmouseleave = () => {
           document.getElementById('svg-center-count').textContent = figmaData.totalMatches;
           document.getElementById('svg-center-sub').textContent = 'matches';
+        };
+        slicesG.append(slice);
+        const anchor = point(middle, 97);
+        sides[anchor[0] < 270 ? 0 : 1].push({ topic, anchor, details });
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'flex items-center gap-2 text-left text-sm rounded-lg p-2 hover:bg-black/5';
+        const swatch = document.createElement('span');
+        swatch.className = 'w-3 h-3 rounded-full shrink-0';
+        swatch.style.backgroundColor = topic.color;
+        button.append(swatch, `${topic.name} · ${details}`);
+        button.onclick = () => openTopic(topic.name);
+        mobile.append(button);
+      }
+
+      sides.forEach((items, side) => {
+        const right = side === 1;
+        const edge = right ? 381 : 159;
+        const textX = right ? 392 : 148;
+        items.sort((a, b) => a.anchor[1] - b.anchor[1]);
+        let previous = 55;
+        items.forEach(({ topic, anchor: [x, y], details }, index) => {
+          const row = Math.min(304 - (items.length - 1 - index) * 30, Math.max(y, previous + 30));
+          previous = row;
+          leadersG.append(createSvg('path', {
+            d: `M ${x} ${y} L ${edge} ${row} H ${right ? 387 : 153}`,
+            fill: 'none', stroke: topic.color, 'stroke-width': 1.4
+          }));
+          const label = createSvg('text', {
+            x: textX, y: row - 2, 'text-anchor': right ? 'start' : 'end',
+            fill: '#1F221B', 'font-weight': 700, class: 'cursor-pointer'
+          });
+          label.textContent = topic.name;
+          const detail = createSvg('tspan', { x: textX, dy: 13, fill: '#64685F', 'font-weight': 500 });
+          detail.textContent = details;
+          label.append(detail);
+          label.onclick = () => openTopic(topic.name);
+          leadersG.append(label);
         });
-        circle.addEventListener('click', () => {
-          openTopic(t.name);
-        });
-
-        slicesG.appendChild(circle);
-
-        // Leader line and label
-        const pos = labelPositions[i];
-        if (pos) {
-          // Line
-          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-          line.setAttribute('x1', pos.lnx);
-          line.setAttribute('y1', pos.lny);
-          line.setAttribute('x2', pos.align === 'start' ? pos.lx - 6 : (pos.align === 'end' ? pos.lx + 6 : pos.lx));
-          line.setAttribute('y2', pos.ly);
-          line.setAttribute('stroke', '#D8D4CA');
-          line.setAttribute('stroke-width', '1');
-          leadersG.appendChild(line);
-
-          // Text group
-          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-          g.setAttribute('class', 'cursor-pointer');
-          g.onclick = () => openTopic(t.name);
-
-          const txt1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          txt1.setAttribute('x', pos.lx);
-          txt1.setAttribute('y', pos.ly - 2);
-          txt1.setAttribute('text-anchor', pos.align);
-          txt1.setAttribute('font-weight', '700');
-          txt1.setAttribute('fill', '#1F221B');
-          txt1.textContent = pos.label;
-
-          const txt2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          txt2.setAttribute('x', pos.lx);
-          txt2.setAttribute('y', pos.ly + 11);
-          txt2.setAttribute('text-anchor', pos.align);
-          txt2.setAttribute('font-size', '9.5');
-          txt2.setAttribute('fill', '#787C72');
-          txt2.textContent = `${t.pct}% · ${t.count}`;
-
-          g.appendChild(txt1);
-          g.appendChild(txt2);
-          leadersG.appendChild(g);
-        }
       });
+    }
+
+    function renderOverviewMilestones(milestones) {
+      const list = document.getElementById('overview-milestones');
+      list.replaceChildren();
+      if (!milestones.length) {
+        list.textContent = 'No planning milestones in this date range.';
+        return;
+      }
+      const formatter = new Intl.DateTimeFormat('en-GB', {
+        day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC'
+      });
+      for (const milestone of milestones) {
+        const item = document.createElement('div');
+        const date = document.createElement('time');
+        date.dateTime = milestone.event_date;
+        date.className = 'text-[11px] font-bold uppercase tracking-wider text-[#73776D] block mb-1';
+        date.textContent = formatter.format(new Date(milestone.event_date));
+        const title = document.createElement('p');
+        title.className = 'text-sm font-semibold text-[#1F221B] leading-snug';
+        title.textContent = milestone.title;
+        item.append(date, title);
+        list.append(item);
+      }
     }
 
     function openTopic(name) {
@@ -1367,7 +1375,10 @@
 
       try {
         const res = await fetch(url);
+        if (!res.ok) throw new Error('Could not load dashboard summary');
         const data = await res.json();
+        if (startDate !== activeStartDate || endDate !== activeEndDate) return;
+        renderOverviewMilestones(data.milestones || []);
 
         // 1. Total matches
         figmaData.totalMatches = data.total_filtered_candidates;
