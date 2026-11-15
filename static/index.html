@@ -51,6 +51,14 @@
 
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baskervville:wght@400;500;600&amp;family=Source+Sans+3:wght@400;500;600;700&amp;display=swap">
   <style>
+    @media (max-width: 1023px) {
+      #topic-pills-bar button {
+        min-width: 0;
+        min-height: 44px;
+        padding: 8px 10px;
+        line-height: 1.25;
+      }
+    }
     #mobile-navigation {
       position: fixed;
       inset: 0 0 0 auto;
@@ -469,12 +477,12 @@
     <div id="view-arguments" class="tab-view hidden space-y-6">
       
       <!-- Top Topic Selector Pills -->
-      <div class="flex items-center justify-between pb-2 border-b border-[#ECE7DC]">
-        <div>
+      <div class="flex flex-col gap-4 pb-4 border-b border-[#ECE7DC] lg:flex-row lg:items-center lg:justify-between">
+        <div class="lg:shrink-0">
           <span class="text-[11px] font-bold uppercase tracking-wider text-[#8C9086]">DEBATE TOPICS</span>
           <h2 class="text-2xl font-bold text-[#1F221B]">Arguments by Topic</h2>
         </div>
-        <div class="flex flex-wrap gap-2" id="topic-pills-bar">
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:flex lg:flex-wrap lg:justify-end" id="topic-pills-bar">
           <!-- Injected via JS -->
         </div>
       </div>
