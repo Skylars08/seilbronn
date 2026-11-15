@@ -327,7 +327,7 @@ def filter_dataset(
     stance: Optional[str] = None,
     query: Optional[str] = None
 ):
-    results = ALL_RECORDS
+    results = [record for record in ALL_RECORDS if not record.get("is_removed")]
     if start_date:
         results = [r for r in results if (r.get("published_at") or "") >= start_date]
     if end_date:
@@ -824,16 +824,17 @@ class RemoveRequest(BaseModel):
     reason: Optional[str] = "Irrelevant or empty record"
 
 @app.get("/api/charts/score-over-time")
-def get_score_over_time():
+def get_score_over_time(start_date: Optional[str] = None, end_date: Optional[str] = None):
     """Calculates mean support score over time (monthly) as in Cable-Car-Debate-Atlas-NLP-Labeler."""
     milestone_dates = {
-        m["event_date"][:7]: m["title"] for m in VERIFIED_MILESTONES if m.get("event_date")
+        m["event_date"][:7]: m["title"]
+        for m in VERIFIED_MILESTONES
+        if (not start_date or m["event_date"] >= start_date[:10])
+        and (not end_date or m["event_date"] <= end_date[:10])
     }
 
     monthly_data = {}
-    for r in ALL_RECORDS:
-        if r.get("is_removed"):
-            continue
+    for r in filter_dataset(start_date=start_date, end_date=end_date):
         pub = (r.get("published_at") or "")[:7]
         if not pub or len(pub) < 7:
             continue

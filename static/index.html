@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de" class="h-full">
+<html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -48,7 +48,7 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baskervville:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baskervville:wght@400;500;600&amp;family=Source+Sans+3:wght@400;500;600;700&amp;display=swap">
   <style>
     h1, h2, h3, h4 {
       font-family: Baskervville, Georgia, serif;
@@ -60,6 +60,7 @@
     @media (max-width: 639px) {
       #donut-leaders-group { display: none; }
     }
+    body.font-sans { font-family: "Source Sans 3", system-ui, sans-serif; }
     body {
       background: 
         radial-gradient(circle at 92% 30%, #FEF6DF 0%, rgba(254, 246, 223, 0.75) 35%, transparent 70%),
@@ -193,7 +194,7 @@
       <button onclick="switchTab('score')" id="nav-score" class="f-pill-light">
         Support score
       </button>
-      <button onclick="switchTab('stops')" id="nav-stops" class="f-pill-light">
+      <button onclick="exploreProposedStops()" id="nav-stops" class="f-pill-light">
         Route &amp; stops
       </button>
       <button onclick="switchTab('compare')" id="nav-compare" class="f-pill-light">
@@ -225,7 +226,7 @@
           PUBLIC DEBATE / HEILBRONN
         </span>
         <h1 class="text-4xl sm:text-5xl font-black text-[#1F221B] tracking-tight">
-          The cable car debate
+          Heilbronn Cable Car
         </h1>
         <p class="text-base text-[#62665D] mt-2 mb-4 font-normal">
           Explore what people say, how opinion shifts and what each proposed stop raises.
@@ -260,7 +261,7 @@
               </g>
 
               <!-- Leader Lines & Direct Text Labels around Donut -->
-              <g id="donut-leaders-group" font-size="11" font-family="-apple-system, BlinkMacSystemFont, sans-serif">
+              <g id="donut-leaders-group" font-size="11" font-family="Source Sans 3, system-ui, sans-serif">
                 <!-- Leader lines & text rendered via JS matching Figma -->
               </g>
             </svg>
@@ -527,7 +528,7 @@
           <div>
             <h3 class="text-base font-bold text-[#1F221B]">Average Support Score Over Time</h3>
             <p class="text-xs text-[#787C72]">
-              Track how expressed public sentiment shifted across monthly council milestones (0 to 10 scale).
+              Each point shows the average score of dated records in that month.
             </p>
           </div>
           <div class="flex items-center space-x-3 text-xs text-[#787C72]">
@@ -541,11 +542,8 @@
         </div>
 
         <div class="p-3.5 rounded-2xl bg-[#FAF8F2] border border-[#ECE7DC] text-xs flex flex-wrap items-center justify-between gap-2 text-[#62665D]">
-          <div>
-            <strong>Milestone Spikes:</strong>
-            <span class="ml-1">Noticeable sentiment surge during the <strong>03 Apr 2025</strong> Council Vote and <strong>12 May 2025</strong> State Funding LOI.</span>
-          </div>
-          <span class="text-[11px] text-[#8C9086]">Derived from 718 records · Excludes removed items</span>
+          <span>Dark dots mark months with a planning milestone.</span>
+          <span id="score-trend-records" class="text-[11px]" aria-live="polite"></span>
         </div>
       </div>
     </div>
@@ -909,7 +907,7 @@
         { key: 'Other / unclassified', name: 'Other / unclassified', pct: 52.4, count: 141, color: '#787C72', anchor: 'top-left' }
       ],
       currentTopic: 'Cost & funding',
-      currentStopId: 'bildungscampus',
+      currentStopId: 'hbf',
       archivePage: 1
     };
 
@@ -986,7 +984,10 @@
 
       if (tabKey === 'arguments') renderTopicArguments();
       if (tabKey === 'score') renderScoreOverTimeChart();
-      if (tabKey === 'stops') renderActiveStop();
+      if (tabKey === 'stops') {
+        renderStopsSelector();
+        renderActiveStop();
+      }
       if (tabKey === 'compare') renderCompareView();
       if (tabKey === 'insights') renderInsightsView();
       if (tabKey === 'labeling') initLabelingWorkbench();
@@ -1159,6 +1160,7 @@
       Object.keys(keyMap).forEach(displayName => {
         const btn = document.createElement('button');
         const isActive = displayName.toLowerCase() === figmaData.currentTopic.toLowerCase();
+        btn.setAttribute('aria-pressed', String(isActive));
         btn.className = isActive ? 'f-pill-dark text-xs py-1.5' : 'f-pill-light text-xs py-1.5';
         btn.textContent = displayName;
         btn.onclick = () => {
@@ -1220,6 +1222,11 @@
       { id: 'ipai', name: 'IPAI', time: '14 min', subtitle: 'Europe AI Flagship Campus', desc: 'Station terminal integrated into the main IPAI Innovation Forum atrium. 14 minutes flat from Hbf.' }
     ];
 
+    function exploreProposedStops() {
+      figmaData.currentStopId = STOPS_LIST[0].id;
+      switchTab('stops');
+    }
+
     function renderStopsSelector() {
       const container = document.getElementById('stops-selector-strip');
       container.innerHTML = '';
@@ -1227,6 +1234,7 @@
       STOPS_LIST.forEach((s, idx) => {
         const btn = document.createElement('button');
         const isActive = s.id === figmaData.currentStopId;
+        btn.setAttribute('aria-pressed', String(isActive));
         btn.className = isActive ? 'f-card-dark p-3 text-left' : 'f-card p-3 text-left hover:border-[#DCD6CA]';
         btn.onclick = () => {
           figmaData.currentStopId = s.id;
@@ -1242,7 +1250,7 @@
     }
 
     function renderActiveStop() {
-      const s = STOPS_LIST.find(x => x.id === figmaData.currentStopId) || STOPS_LIST[3];
+      const s = STOPS_LIST.find(x => x.id === figmaData.currentStopId) || STOPS_LIST[0];
       const card = document.getElementById('active-stop-card');
       card.innerHTML = `
         <div class="flex items-center justify-between pb-4 border-b border-[#ECE7DC]">
@@ -1464,6 +1472,10 @@
             const travelCount = (serverTopics['Travel Time & Commute'] || {}).count || 0;
             pElements[2].textContent = `Keyword signals · ${costCount} cost/funding · ${accessCount} accessibility · ${connCount} connections · ${travelCount} travel time`;
           }
+        }
+
+        if (!document.getElementById('view-score').classList.contains('hidden')) {
+          renderScoreOverTimeChart();
         }
 
         // 6. If Archive tab is active, reload with new dates
@@ -1719,18 +1731,28 @@
       if (!canvas) return;
 
       try {
-        const res = await fetch('/api/charts/score-over-time');
+        const start = activeStartDate;
+        const end = activeEndDate;
+        const params = new URLSearchParams();
+        if (start) params.set('start_date', start);
+        if (end) params.set('end_date', end);
+        const res = await fetch('/api/charts/score-over-time?' + params);
+        if (!res.ok) throw new Error('Could not load score trend');
         const data = await res.json();
+        if (start !== activeStartDate || end !== activeEndDate) return;
         const series = data.series || [];
-        if (!series.length) return;
+        scoreOverTimeChartInstance?.destroy();
+        scoreOverTimeChartInstance = null;
+        const total = series.reduce((count, month) => count + month.count, 0);
+        document.getElementById('score-trend-records').textContent = total
+          ? `${total} dated scored records in this range`
+          : 'No dated scored records in this range.';
+        canvas.parentElement.classList.toggle('hidden', !total);
+        if (!total) return;
 
         const labels = series.map(s => s.label);
         const scores = series.map(s => s.avg_score);
         const baseline = series.map(() => 5.0);
-
-        if (scoreOverTimeChartInstance) {
-          scoreOverTimeChartInstance.destroy();
-        }
 
         const ctx = canvas.getContext('2d');
         scoreOverTimeChartInstance = new Chart(ctx, {
