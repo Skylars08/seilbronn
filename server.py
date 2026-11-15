@@ -1084,6 +1084,28 @@ def get_crawler_status():
         "api_key_configured": bool(os.getenv("YOUTUBE_API_KEY"))
     }
 
+@app.get("/api/discussion")
+def get_discussion():
+    """Return recent archived excerpts across available source types."""
+    records = sorted(ALL_RECORDS, key=lambda row: row.get("published_at") or "", reverse=True)
+    sources = {"News", "news_article", "news", "Forums", "Social Network", "Microblog",
+               "Comments", "YouTube Comments", "social_comment", "Blog"}
+    selected = []
+    used = set()
+    for row in records:
+        medium = row.get("media_type_name")
+        body = row.get("content") or row.get("title")
+        title_text = ((row.get("title") or "") + " " + (body or "")).casefold()
+        group = {"news_article": "News", "news": "News", "social_comment": "YouTube Comments"}.get(medium, medium)
+        if (medium not in sources or not body or group in used or
+                "heilbronn" not in title_text or "seilbahn" not in title_text):
+            continue
+        used.add(group)
+        selected.append({"source": group, "date": (row.get("published_at") or "")[:10],
+                         "text": body[:260] + ("…" if len(body) > 260 else "")})
+    return {"records": selected}
+
+
 @app.get("/api/live-comments")
 def live_comments():
     """Read the latest top-level comments from three videos in the dataset."""
