@@ -934,7 +934,7 @@
         await updateDashboardForDateRange(null, null, 'Choose dates');
       }
 
-      const pTab = urlParams.get('tab') || window.location.hash.replace('#', '') || 'overview';
+      const pTab = new URLSearchParams(window.location.search).get('tab') || window.location.hash.replace('#', '') || 'overview';
       history.replaceState({ tab: pTab }, '', window.location.href);
       switchTab(pTab, false);
     });
