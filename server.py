@@ -126,100 +126,12 @@ VERIFIED_MILESTONES = [
 
 # Stops definitions
 STOPS_DATA = [
-    {
-        "id": "hauptbahnhof",
-        "name": "Hauptbahnhof (Hbf)",
-        "subtitle": "Multimodal Gateway & Regional Hub",
-        "transfer_links": ["Deutsche Bahn RE/RB/MEX", "S-Bahn Rhein-Neckar", "Stadtbahn Heilbronn S4/S41/S42", "ZOB Busbahnhof"],
-        "travel_time_from_start": "0 min",
-        "walking_link": "Covered 80m footbridge directly from platform 1 to cable-car entrance level (+1).",
-        "passenger_scenario": "Commuters arriving from Stuttgart, Karlsruhe, or Mannheim transfer seamlessly into 10-person gondolas with 30-second headway.",
-        "feedback_summary": "High excitement about bypassing inner-city traffic; concerns about morning rush-hour queuing and bike carriage limits.",
-        "recommendations": [
-            "Install dedicated turnstiles for commuter ticket holders (Deutschlandticket).",
-            "Design generous gondola interior with folding seats for wheelchairs and 2 bicycles per cabin.",
-            "Synchronize arrival displays with Deutsche Bahn real-time departure boards."
-        ],
-        "coords": [49.1416, 9.2083]
-    },
-    {
-        "id": "neckarbogen",
-        "name": "Neckarbogen",
-        "subtitle": "Eco-District & Waterfront Residential",
-        "transfer_links": ["Local Bus line 8", "City Bike Sharing", "Pedestrian Neckar promenade"],
-        "travel_time_from_start": "3 min",
-        "walking_link": "Direct ramp to riverbank promenade and residential courtyards (under 2 minutes walking).",
-        "passenger_scenario": "Residents commuting to Bildungscampus or IPAI; weekend leisure passengers accessing riverside parks.",
-        "feedback_summary": "Primary concern: Privacy invasion / sightlines into 3rd-floor apartments; noise from cable sheaves on support towers.",
-        "recommendations": [
-            "Smart electrochromic glass windows that automatically turn opaque when gondolas pass over residential balconies.",
-            "Tower placement optimized to avoid direct sightlines into private bedrooms.",
-            "Vibration-damped sheave assemblies certified below 42 dB(A) at building facades."
-        ],
-        "coords": [49.1495, 9.2135]
-    },
-    {
-        "id": "europaplatz_buga",
-        "name": "Europaplatz / BUGA",
-        "subtitle": "Convention, Parks & Recreation",
-        "transfer_links": ["Stadtbahn S41/S42", "Bus lines 10, 11", "Park & Ride Parking Garage"],
-        "travel_time_from_start": "6 min",
-        "walking_link": "Integrated into plaza entrance, 50m to convention center foyer.",
-        "passenger_scenario": "Event attendees, tourists visiting former BUGA grounds, and local families.",
-        "feedback_summary": "Strong historical nostalgia from successful BUGA 2019 cable car; request to keep ticket prices within standard ÖPNV tariff.",
-        "recommendations": [
-            "Integrate full Deutschlandticket and HNV tariff validity without extra surcharge.",
-            "Install cultural & historical information panels highlighting BUGA legacy and future green city transit."
-        ],
-        "coords": [49.1538, 9.2198]
-    },
-    {
-        "id": "bildungscampus_west",
-        "name": "Bildungscampus West",
-        "subtitle": "Higher Education & University Hub",
-        "transfer_links": ["Campus Shuttle", "Bus line 5", "E-Scooter Hub"],
-        "travel_time_from_start": "9 min",
-        "walking_link": "Short 60m landscaped walkway to DHBW and TUM Campus buildings.",
-        "passenger_scenario": "Over 10,000 university students and researchers commuting between campus and rail stations.",
-        "feedback_summary": "Massive student support; high demand for reliable winter operation and late evening return trips after study sessions.",
-        "recommendations": [
-            "Extend operating hours until 23:30 on weekdays and midnight on exam period weekends.",
-            "Campus card contactless validation at speed gates.",
-            "Dedicated weather-protected student waiting lounge with Wi-Fi."
-        ],
-        "coords": [49.1582, 9.2245]
-    },
-    {
-        "id": "theresienwiese",
-        "name": "Theresienwiese / Wohlgelegen",
-        "subtitle": "Commercial & Regional P+R Hub",
-        "transfer_links": ["Regional Bus 631, 642", "Park & Ride (800 car spaces)", "B+R Covered Bike Station"],
-        "travel_time_from_start": "11 min",
-        "walking_link": "Direct covered stairway and high-capacity elevator connecting parking deck directly to platform.",
-        "passenger_scenario": "Inbound regional commuters from surrounding Heilbronn district parking cars outside the center and floating above congestion.",
-        "feedback_summary": "Questions regarding parking fees for P+R users and electric charging integration.",
-        "recommendations": [
-            "Combined Park+Ride + Cable Car combo ticket (free parking with transit ride).",
-            "Solar canopy on parking roof supplying direct green electricity to cable car drive."
-        ],
-        "coords": [49.1620, 9.2310]
-    },
-    {
-        "id": "ipai",
-        "name": "IPAI (Innovation Park AI)",
-        "subtitle": "Europe's AI Flagship & Technology Campus",
-        "transfer_links": ["IPAI Autonomous Shuttle", "Regional express connections", "Innovation Hub Concierge"],
-        "travel_time_from_start": "14 min",
-        "walking_link": "Station terminal integrated directly inside the main IPAI Innovation Forum atrium.",
-        "passenger_scenario": "Tech workers, global visiting scientists, founders, and business delegates arriving from Hbf in 14 minutes flat.",
-        "feedback_summary": "Celebrated as a visionary technology showcase connecting city center with the AI hub; inquiries on freight/parcel transport.",
-        "recommendations": [
-            "Test off-peak automated lightweight parcel delivery capsules between IPAI research labs and Hbf logistics.",
-            "Digital departure boards in all IPAI company lobbies showing real-time gondola arrivals.",
-            "100% renewable solar power branding reflecting Heilbronn's green technology vision."
-        ],
-        "coords": [49.1685, 9.2392]
-    }
+    {"id": "innenstadt", "name": "Innenstadt", "subtitle": "Neckarturm · Kurt-Schumacher-Platz, near Hauptbahnhof"},
+    {"id": "bildungscampus_west", "name": "Bildungscampus West", "subtitle": "Western education campus"},
+    {"id": "wohlgelegen", "name": "Wohlgelegen", "subtitle": "Zukunftspark Wohlgelegen"},
+    {"id": "neckargartacher_bruecke", "name": "Neckargartacher Brücke", "subtitle": "Proposed stop at Neckargartacher Brücke"},
+    {"id": "neckarau", "name": "Neckarau", "subtitle": "Alte Molkerei"},
+    {"id": "ipai_campus", "name": "IPAI Campus", "subtitle": "Proposed northern terminus"},
 ]
 
 # Topic deep dive data
@@ -496,14 +408,16 @@ PROJECTS_COMPARISON = [
         "stage": "Planning / Pre-engineering (Vorplanung)",
         "stage_badge": "Planning",
         "type": "Continuous 3S / Monocable Ropeway",
-        "length_km": 4.2,
+        "length_km": 5.0,
         "stations_count": 6,
-        "travel_time": "14 min",
-        "estimated_cost": "€45M – €60M",
-        "subsidy_rate": "60% – 75% (GVFG Federal/State)",
+        "travel_time": "About 15 min",
+        "estimated_cost": "€157M",
+        "cost_basis": "Feasibility estimate at 2026 prices, subject to further planning.",
+        "cost_source": "https://www.heilbronn.de/umwelt-mobilitaet/mobilitaet/seilbahn.html",
+        "subsidy_rate": "Up to 90% public funding is sought",
         "support_score": 6.25,
         "sentiment_label": "Constructive / Favorable",
-        "primary_driver": "Grade-separated Neckar river and railway bottleneck bypass directly connecting Hbf to IPAI.",
+        "primary_driver": "Grade-separated Neckar river and railway bottleneck bypass connecting Innenstadt to IPAI.",
         "top_public_concern": "Operating deficit risk & balcony privacy for Neckarbogen residents.",
         "tariff_model": "Full Deutschlandticket & HNV zone inclusion (essential demand).",
         "key_takeaway_for_heilbronn": "Baseline project under evaluation. High willingness to ride when framed as everyday commuter transit rather than a tourist ride."
@@ -515,11 +429,13 @@ PROJECTS_COMPARISON = [
         "stage": "Statutory Approval (Planfeststellung)",
         "stage_badge": "Planning / Legal Review",
         "type": "Continuous Detachable Cable Car",
-        "length_km": 4.3,
+        "length_km": 3.8,
         "stations_count": 5,
         "travel_time": "10–12 min (vs 40 min bus)",
-        "estimated_cost": "€65M – €90M",
-        "subsidy_rate": "Up to 80% (GVFG NRW)",
+        "estimated_cost": "€155M net",
+        "cost_basis": "Investment estimate excluding VAT, March 2026.",
+        "cost_source": "https://www.bonn.de/pressemitteilungen/maerz-2026/neuer-sachstand-zur-bonner-seilbahn.php?loc=en",
+        "subsidy_rate": "GVFG funding anticipated. Estimated city share: €17.6M",
         "support_score": 5.10,
         "sentiment_label": "Polarized / Contested",
         "primary_driver": "Relieving 10,000+ hospital workers, patients, and university staff climbing steep Venusberg hill.",
@@ -537,8 +453,10 @@ PROJECTS_COMPARISON = [
         "length_km": 4.5,
         "stations_count": 5,
         "travel_time": "17 min (vs 45 min bus)",
-        "estimated_cost": "€132M",
-        "subsidy_rate": "100% Regional/State Funded",
+        "estimated_cost": "€138M",
+        "cost_basis": "Published project cost including cabins.",
+        "cost_source": "https://www.iledefrance-mobilites.fr/le-reseau/projets/cablec1/questions/combien-coutera-ce-projet-",
+        "subsidy_rate": "Infrastructure: region 49%, state and EU 21%, department 30%",
         "support_score": 7.80,
         "sentiment_label": "High Public Adoption",
         "primary_driver": "Connecting suburban banlieues severed by massive freight rail tracks and highway interchanges.",
@@ -556,8 +474,10 @@ PROJECTS_COMPARISON = [
         "length_km": 0.0,
         "stations_count": 1,
         "travel_time": "Destination Terminus",
-        "estimated_cost": "€1B+ Capital Investment",
-        "subsidy_rate": "Private Foundation + Land Baden-Württemberg",
+        "estimated_cost": "Total budget undisclosed",
+        "cost_basis": "SWR reports an unofficial construction estimate of about €3B.",
+        "cost_source": "https://www.swr.de/swraktuell/baden-wuerttemberg/heilbronn/ipai-ki-campus-spatenstich-kanzler-dieter-schwarz-stiftung-100.html",
+        "subsidy_rate": "Foundation and state startup funding",
         "support_score": 7.10,
         "sentiment_label": "Strategic Pride / Tech Magnet",
         "primary_driver": "Transforming Heilbronn into the European epicenter of applied artificial intelligence.",

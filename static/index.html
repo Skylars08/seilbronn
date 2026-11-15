@@ -558,7 +558,7 @@
         <span class="text-[11px] font-bold uppercase tracking-wider text-[#8C9086]">TRANSIT CORRIDOR</span>
         <h2 class="text-2xl font-bold text-[#1F221B]">Proposed Route &amp; 6 Stops</h2>
         <p class="text-xs text-[#62665D] mt-1">
-          14-minute end-to-end aerial cableway connecting Heilbronn Central Station to IPAI.
+          About 5 km from Innenstadt to IPAI Campus, with an end-to-end planning target of about 14–15 minutes. The alignment remains under review. <a class="underline" href="https://www.heilbronn.de/umwelt-mobilitaet/mobilitaet/seilbahn.html">City route details</a>.
         </p>
       </div>
 
@@ -909,7 +909,7 @@
         { key: 'Other / unclassified', name: 'Other / unclassified', pct: 52.4, count: 141, color: '#787C72', anchor: 'top-left' }
       ],
       currentTopic: 'Cost & funding',
-      currentStopId: 'hbf',
+      currentStopId: 'innenstadt',
       archivePage: 1
     };
 
@@ -946,7 +946,7 @@
           fetch('/api/stops')
         ]);
         topicsKnowledge = await topRes.json();
-        stopsData = await stopRes.json();
+        if (stopRes.ok) stopsData = await stopRes.json();
       } catch (e) {
         console.warn('Backend fetch failed, using built-in defaults:', e);
       }
@@ -1215,67 +1215,42 @@
     // ========================================================
     // RENDER ROUTE & 6 STOPS VIEW
     // ========================================================
-    const STOPS_LIST = [
-      { id: 'hbf', name: 'Hauptbahnhof', time: '0 min', subtitle: 'Regional & High-Speed Hub', desc: 'Covered footbridge connecting DB Platform 1 to cable-car entrance. Commuters transfer seamlessly from S-Bahn and RE trains.' },
-      { id: 'neckarbogen', name: 'Neckarbogen', time: '3 min', subtitle: 'Eco-District & Waterfront', desc: 'Direct ramp to river promenade. Primary citizen issue is privacy into 3rd-floor balconies, solved via smart electrochromic frosting.' },
-      { id: 'europaplatz', name: 'Europaplatz / BUGA', time: '6 min', subtitle: 'Convention & Parklands', desc: 'Direct integration with convention center and former BUGA grounds. Unified tariff with Deutschlandticket.' },
-      { id: 'bildungscampus', name: 'Bildungscampus West', time: '9 min', subtitle: 'University & Research Hub', desc: 'Short 60m landscaped walkway to DHBW and TUM Campus. High student enthusiasm for reliable late evening operations.' },
-      { id: 'theresienwiese', name: 'Theresienwiese / Wohlgelegen', time: '11 min', subtitle: 'P+R Regional Terminal', desc: 'Direct elevator connecting 800-car parking deck to platform. Regional drivers bypass city jams.' },
-      { id: 'ipai', name: 'IPAI', time: '14 min', subtitle: 'Europe AI Flagship Campus', desc: 'Station terminal integrated into the main IPAI Innovation Forum atrium. 14 minutes flat from Hbf.' }
-    ];
-
     function exploreProposedStops() {
-      figmaData.currentStopId = STOPS_LIST[0].id;
+      figmaData.currentStopId = stopsData?.[0]?.id;
       switchTab('stops');
     }
 
     function renderStopsSelector() {
       const container = document.getElementById('stops-selector-strip');
-      container.innerHTML = '';
+      container.replaceChildren();
 
-      STOPS_LIST.forEach((s, idx) => {
-        const btn = document.createElement('button');
-        const isActive = s.id === figmaData.currentStopId;
-        btn.setAttribute('aria-pressed', String(isActive));
-        btn.className = isActive ? 'f-card-dark p-3 text-left' : 'f-card p-3 text-left hover:border-[#DCD6CA]';
-        btn.onclick = () => {
-          figmaData.currentStopId = s.id;
+      (stopsData || []).forEach((stop, index) => {
+        const button = document.createElement('button');
+        const selected = stop.id === figmaData.currentStopId;
+        button.type = 'button';
+        button.setAttribute('aria-pressed', String(selected));
+        button.className = selected ? 'f-card-dark p-3 text-left' : 'f-card p-3 text-left hover:border-[#DCD6CA]';
+        button.textContent = `${index + 1}. ${stop.name}`;
+        button.onclick = () => {
+          figmaData.currentStopId = stop.id;
           renderStopsSelector();
           renderActiveStop();
+          container.children[index].focus();
         };
-        btn.innerHTML = `
-          <span class="text-[10px] block opacity-60">#${idx+1} · ${s.time}</span>
-          <strong class="text-xs font-bold block truncate">${s.name}</strong>
-        `;
-        container.appendChild(btn);
+        container.append(button);
       });
     }
 
     function renderActiveStop() {
-      const s = STOPS_LIST.find(x => x.id === figmaData.currentStopId) || STOPS_LIST[0];
+      const stop = stopsData?.find(item => item.id === figmaData.currentStopId) || stopsData?.[0];
       const card = document.getElementById('active-stop-card');
+      if (!stop) {
+        card.textContent = 'Proposed stops are currently unavailable.';
+        return;
+      }
       card.innerHTML = `
-        <div class="flex items-center justify-between pb-4 border-b border-[#ECE7DC]">
-          <div>
-            <span class="text-[11px] font-bold text-[#A87216] uppercase tracking-wider block">Stop Overview</span>
-            <h3 class="text-2xl font-bold text-[#1F221B] mt-0.5">${s.name}</h3>
-            <span class="text-xs text-[#787C72]">${s.subtitle} · ${s.time} from Hauptbahnhof</span>
-          </div>
-          <span class="f-pill-light text-xs font-bold">${s.time}</span>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
-          <div class="p-4 rounded-2xl bg-[#FAF8F2] border border-[#ECE7DC] space-y-1">
-            <strong class="text-[#1F221B] block font-bold">Transfer &amp; Walking Link:</strong>
-            <p class="text-[#62665D] leading-relaxed">${s.desc}</p>
-          </div>
-          <div class="p-4 rounded-2xl bg-[#FAF8F2] border border-[#ECE7DC] space-y-1">
-            <strong class="text-[#1F221B] block font-bold">Citizen Expectation &amp; Planning Fix:</strong>
-            <p class="text-[#62665D] leading-relaxed">
-              Timetable coordination, step-free access for strollers/wheelchairs, and covered rain canopies.
-            </p>
-          </div>
-        </div>
+        <h3 class="text-2xl font-bold text-[#1F221B]">${escapeHtml(stop.name)}</h3>
+        <p class="text-sm text-[#62665D]">${escapeHtml(stop.subtitle)}</p>
       `;
     }
 
@@ -1625,8 +1600,10 @@
                 <strong class="text-[#1F221B] text-[11px]">${p.length_km ? p.length_km + ' km · ' : ''}${p.stations_count} stops</strong>
               </div>
               <div>
-                <span class="text-[10px] text-[#8C9086] block">Est. Budget</span>
+                <span class="text-[10px] text-[#8C9086] block">Published cost</span>
                 <strong class="text-[#1F221B] text-[11px]">${escapeHtml(p.estimated_cost)}</strong>
+                <p class="text-xs text-[#62665D]">${escapeHtml(p.cost_basis)}</p>
+                <a class="text-xs underline" href="${escapeHtml(p.cost_source)}">Cost source</a>
               </div>
             </div>
 
