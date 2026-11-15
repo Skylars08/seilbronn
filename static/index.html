@@ -51,6 +51,25 @@
 
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baskervville:wght@400;500;600&amp;family=Source+Sans+3:wght@400;500;600;700&amp;display=swap">
   <style>
+    #mobile-navigation {
+      position: fixed;
+      inset: 0 0 0 auto;
+      margin: 0;
+      width: min(20rem, calc(100% - 2rem));
+      max-width: none;
+      height: 100%;
+      max-height: none;
+      padding: 1.25rem;
+      background: #FAF8F2;
+      color: #1F221B;
+      box-shadow: -12px 0 40px #1F221B24;
+      overflow-y: auto;
+    }
+    #mobile-navigation::backdrop {
+      background: rgb(31 34 27 / 25%);
+      backdrop-filter: blur(8px);
+    }
+    body:has(#mobile-navigation[open]) { overflow: hidden; }
     h1, h2, h3, h4 {
       font-family: Baskervville, Georgia, serif;
       font-weight: 600 !important;
@@ -177,14 +196,16 @@
 <body class="font-sans antialiased flex flex-col min-h-screen">
 
   <!-- TOP HEADER / NAV -->
-  <header class="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-4 flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-between">
+  <header class="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-4 flex items-center justify-between gap-3">
     <!-- Brand Title -->
     <button type="button" class="shrink-0 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4" onclick="switchTab('overview')" aria-label="Seilbronn overview">
       <img src="/seilbronn-logo.webp" alt="Seilbronn" width="144" height="46" class="block mix-blend-multiply" style="filter: brightness(1.04)">
     </button>
 
     <!-- Navigation Pills Group -->
-    <button type="button" id="mobile-menu" class="f-pill-light md:hidden" aria-controls="main-nav" aria-expanded="false">Menu</button>
+    <button type="button" id="mobile-menu" class="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white bg-white/80 text-[#1F221B] md:hidden" aria-label="Open navigation" aria-haspopup="dialog" aria-controls="mobile-navigation" aria-expanded="false">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
     <nav id="main-nav" aria-label="Main navigation" class="hidden md:flex items-center gap-1.5 bg-transparent overflow-x-auto py-1 max-w-full min-w-0">
       <button onclick="switchTab('overview')" id="nav-overview" class="f-pill-dark">
         Overview
@@ -212,6 +233,17 @@
       </button>
     </nav>
   </header>
+  <dialog id="mobile-navigation" aria-labelledby="mobile-navigation-title">
+    <div class="mb-5 flex items-center justify-between gap-4">
+      <h2 id="mobile-navigation-title" class="text-xl">Navigation</h2>
+      <form method="dialog">
+        <button type="submit" autofocus class="grid h-11 w-11 place-items-center rounded-full border border-[#DCD6CA]" aria-label="Close navigation">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </form>
+    </div>
+    <nav id="mobile-nav-links" aria-label="Mobile navigation" class="grid gap-2"></nav>
+  </dialog>
 
   <!-- MAIN WRAPPER -->
   <main class="w-full max-w-6xl mx-auto px-4 sm:px-6 py-4 flex-1 space-y-6">
@@ -954,21 +986,30 @@
 
     // Switch Navigation Tabs with Browser History Support
     const menu = document.getElementById('mobile-menu');
-    const mainNav = document.getElementById('main-nav');
-    function setMenu(open) {
-      menu.setAttribute('aria-expanded', String(open));
-      mainNav.classList.toggle('hidden', !open);
-      mainNav.classList.toggle('flex', open);
-    }
-    menu.addEventListener('click', () => setMenu(menu.getAttribute('aria-expanded') !== 'true'));
-    document.addEventListener('keydown', event => {
-      if (event.key === 'Escape' && menu.getAttribute('aria-expanded') === 'true') {
-        setMenu(false);
-        menu.focus();
-      }
+    const mobileNavigation = document.getElementById('mobile-navigation');
+    const mobileLinks = document.getElementById('mobile-nav-links');
+    const desktopBreakpoint = window.matchMedia('(min-width: 768px)');
+    menu.addEventListener('click', () => {
+      mobileLinks.replaceChildren(...Array.from(document.querySelectorAll('#main-nav button'), source => {
+        const link = source.cloneNode(true);
+        link.removeAttribute('id');
+        link.classList.add('w-full', 'text-left');
+        if (source.classList.contains('f-pill-dark')) link.setAttribute('aria-current', 'page');
+        return link;
+      }));
+      mobileNavigation.showModal();
+      menu.setAttribute('aria-expanded', 'true');
+    });
+    mobileNavigation.addEventListener('close', () => menu.setAttribute('aria-expanded', 'false'));
+    mobileNavigation.addEventListener('click', event => {
+      const bounds = mobileNavigation.getBoundingClientRect();
+      if (event.target === mobileNavigation && event.clientX < bounds.left) mobileNavigation.close();
+    });
+    desktopBreakpoint.addEventListener('change', event => {
+      if (event.matches && mobileNavigation.open) mobileNavigation.close();
     });
     function switchTab(tabKey, updateHistory = true) {
-      setMenu(false);
+      if (mobileNavigation.open) mobileNavigation.close();
       document.querySelectorAll('.tab-view').forEach(v => v.classList.add('hidden'));
       const target = document.getElementById(`view-${tabKey}`);
       if (target) target.classList.remove('hidden');
