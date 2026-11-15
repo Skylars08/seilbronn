@@ -203,10 +203,10 @@
     </button>
 
     <!-- Navigation Pills Group -->
-    <button type="button" id="mobile-menu" class="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white bg-white/80 text-[#1F221B] md:hidden" aria-label="Open navigation" aria-haspopup="dialog" aria-controls="mobile-navigation" aria-expanded="false">
+    <button type="button" id="mobile-menu" class="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white bg-white/80 text-[#1F221B] lg:hidden" aria-label="Open navigation" aria-haspopup="dialog" aria-controls="mobile-navigation" aria-expanded="false">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
     </button>
-    <nav id="main-nav" aria-label="Main navigation" class="hidden md:flex items-center gap-1.5 bg-transparent overflow-x-auto py-1 max-w-full min-w-0">
+    <nav id="main-nav" aria-label="Main navigation" class="hidden lg:flex items-center gap-1.5 bg-transparent overflow-x-auto py-1 max-w-full min-w-0">
       <button onclick="switchTab('overview')" id="nav-overview" class="f-pill-dark">
         Overview
       </button>
@@ -988,7 +988,7 @@
     const menu = document.getElementById('mobile-menu');
     const mobileNavigation = document.getElementById('mobile-navigation');
     const mobileLinks = document.getElementById('mobile-nav-links');
-    const desktopBreakpoint = window.matchMedia('(min-width: 768px)');
+    const desktopBreakpoint = window.matchMedia('(min-width: 1024px)');
     menu.addEventListener('click', () => {
       mobileLinks.replaceChildren(...Array.from(document.querySelectorAll('#main-nav button'), source => {
         const link = source.cloneNode(true);
