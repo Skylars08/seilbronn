@@ -558,7 +558,7 @@
         <span class="text-[11px] font-bold uppercase tracking-wider text-[#8C9086]">TRANSIT CORRIDOR</span>
         <h2 class="text-2xl font-bold text-[#1F221B]">Proposed Route &amp; 6 Stops</h2>
         <p class="text-xs text-[#62665D] mt-1">
-          The city’s FAQ lists 4.7 km, rounded to about 5 km in its corridor overview, and targets about 15 minutes end to end. Stop-to-stop estimates divide the 15-minute target equally across five legs. Actual times may vary. The council approved preliminary planning on 27 July 2026. Detailed design and the approval process are still ahead. <a class="underline" href="https://www.heilbronn.de/umwelt-mobilitaet/mobilitaet/seilbahn.html">City route details</a>.
+          The city’s FAQ lists 4.7 km, rounded to about 5 km in its corridor overview. The council approved preliminary planning on 27 July 2026. Detailed design and the approval process are still ahead. <a class="underline" href="https://www.heilbronn.de/umwelt-mobilitaet/mobilitaet/seilbahn.html">City route details</a>.
         </p>
       </div>
 
@@ -1233,18 +1233,7 @@
         const title = document.createElement('strong');
         title.className = 'block text-sm leading-tight';
         title.textContent = `${index + 1}. ${stop.name}`;
-        const timing = document.createElement('span');
-        timing.className = 'block mt-2 text-xs leading-snug';
-        timing.textContent = index === 0
-          ? 'Journey start'
-          : `From ${stopsData[index - 1].name}: ~3 min (est.)`;
-        button.append(title, timing);
-        if (index === stopsData.length - 1) {
-          const total = document.createElement('span');
-          total.className = 'block mt-1 text-xs font-semibold';
-          total.textContent = 'From Innenstadt: ~15 min';
-          button.append(total);
-        }
+        button.append(title);
         button.onclick = () => {
           figmaData.currentStopId = stop.id;
           renderStopsSelector();
