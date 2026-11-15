@@ -22,7 +22,7 @@ from pydantic import BaseModel
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from crawler.cron_ingest import run_ingestion_cycle
+HOSTED = bool(os.getenv("VERCEL"))
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
@@ -381,7 +381,7 @@ def get_summary(
 
     # Calculate Stances & Scores
     scores = [r.get("support_score") for r in filtered if r.get("support_score") is not None]
-    avg_score = round(sum(scores) / len(scores), 2) if scores else 6.25
+    avg_score = round(sum(scores) / len(scores), 2) if scores else None
 
     stance_counts = {
         "strongly_support": 0,
@@ -425,13 +425,13 @@ def get_summary(
                 timeline_map[month]["social"] += 1
             else:
                 timeline_map[month]["news"] += 1
-            if r.get("support_score"):
+            if r.get("support_score") is not None:
                 timeline_map[month]["avg_score"].append(r["support_score"])
 
     timeline = []
     for m in sorted(timeline_map.keys()):
         item = timeline_map[m]
-        avg_s = round(sum(item["avg_score"]) / len(item["avg_score"]), 1) if item["avg_score"] else 6.0
+        avg_s = round(sum(item["avg_score"]) / len(item["avg_score"]), 1) if item["avg_score"] else None
         timeline.append({
             "month": m,
             "total": item["total"],
@@ -797,7 +797,8 @@ def ask_ai(req: AskAIRequest):
         "query_problem": req.problem,
         "topic": t or "General",
         "station": station or "Whole Route",
-        "solutions": solutions,
+        "solutions": [{"title": item["title"], "summary": "Potential option for planning review. Evidence, costs and feasibility require validation."} for item in solutions],
+        "mode": "preset",
         "generated_at": datetime.now().isoformat()
     }
 
@@ -940,6 +941,8 @@ def get_labeling_queue(
 
 @app.post("/api/label")
 def save_label(req: LabelRequest):
+    if HOSTED:
+        raise HTTPException(status_code=403, detail="Available on the local workspace. Hosted preview uses an archive snapshot.")
     # Update memory
     updated = False
     for r in ALL_RECORDS:
@@ -978,6 +981,8 @@ def save_label(req: LabelRequest):
 
 @app.post("/api/labeling/remove")
 def remove_record(req: RemoveRequest):
+    if HOSTED:
+        raise HTTPException(status_code=403, detail="Available on the local workspace. Hosted preview uses an archive snapshot.")
     """Mark an empty or irrelevant record as removed (soft delete) as in Cable-Car-Debate-Atlas-NLP-Labeler."""
     updated = False
     for r in ALL_RECORDS:
@@ -1033,6 +1038,7 @@ def run_crawler_job():
         return
     CRAWLER_STATE["is_running"] = True
     try:
+        from crawler.cron_ingest import run_ingestion_cycle
         new_cnt = run_ingestion_cycle()
         reload_records_from_disk()
         CRAWLER_STATE["last_new_records_count"] = new_cnt
@@ -1054,11 +1060,13 @@ def background_crawler_loop():
         time.sleep(86400)
 
 # Start 24-hour background thread on server startup
-crawler_thread = Thread(target=background_crawler_loop, daemon=True)
-crawler_thread.start()
+if not HOSTED and os.getenv("SEILBRONN_DISABLE_CRAWLER") != "1":
+    Thread(target=background_crawler_loop, daemon=True).start()
 
 @app.post("/api/crawl")
 def trigger_crawl():
+    if HOSTED:
+        raise HTTPException(status_code=403, detail="Available on the local workspace. Hosted preview uses an archive snapshot.")
     """Trigger real-time YouTube and RSS crawler cycle immediately."""
     Thread(target=run_crawler_job, daemon=True).start()
     return {
@@ -1072,9 +1080,43 @@ def get_crawler_status():
     return {
         "crawler": "YouTube Data API v3 + RSS Feeds (SWR, Stadt Heilbronn, Google News)",
         "state": CRAWLER_STATE,
-        "interval": "Every 24 hours (daily)",
-        "api_key_configured": bool(os.getenv("YOUTUBE_API_KEY") or (BASE_DIR / ".env").exists())
+        "interval": "Archive snapshot" if HOSTED else "Every 24 hours (daily)",
+        "api_key_configured": bool(os.getenv("YOUTUBE_API_KEY"))
     }
+
+@app.get("/api/live-comments")
+def live_comments():
+    """Read the latest top-level comments from three videos in the dataset."""
+    from urllib.request import Request, urlopen
+    from urllib.parse import urlencode
+    from urllib.error import URLError
+
+    key = os.getenv("YOUTUBE_API_KEY")
+    if not key:
+        raise HTTPException(status_code=503, detail="YouTube refresh is unavailable.")
+    comments = []
+    unavailable = 0
+    for video in ("pUbjyvm8xkQ", "AIaXrdB4S9I", "N9sowXhdBAA"):
+        query = urlencode(dict(part="snippet", videoId=video, order="time", maxResults=5, textFormat="plainText"))
+        request = Request("https://www.googleapis.com/youtube/v3/commentThreads?" + query,
+                          headers={"X-Goog-Api-Key": key})
+        try:
+            with urlopen(request, timeout=4) as response:
+                batch = json.load(response)
+        except (URLError, TimeoutError, ValueError):
+            unavailable += 1
+            continue
+        for item in batch.get("items", []):
+            post = item["snippet"]["topLevelComment"]["snippet"]
+            comments.append(dict(text=post["textDisplay"], published_at=post["publishedAt"],
+                                 url="https://www.youtube.com/watch?v=" + video))
+    if unavailable == 3:
+        raise HTTPException(status_code=502, detail="YouTube did not return comments. Try again later.")
+    comments.sort(key=lambda item: item["published_at"], reverse=True)
+    return JSONResponse(dict(comments=comments, checked_at=datetime.now().astimezone().isoformat(),
+                             unavailable_videos=unavailable),
+                        headers={"Cache-Control": "public, s-maxage=900"})
+
 
 @app.get("/api/export/{fmt}")
 def export_dataset(fmt: str):
@@ -1085,6 +1127,8 @@ def export_dataset(fmt: str):
             filename="seilbronn_heilbronn_cable_car_dataset.json"
         )
     elif fmt == "sqlite":
+        if HOSTED or not DB_FILE.exists():
+            raise HTTPException(status_code=404, detail="SQLite export is available from the local workspace.")
         return FileResponse(
             DB_FILE,
             media_type="application/x-sqlite3",

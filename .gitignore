@@ -26,3 +26,4 @@ models/*-latest.json
 
 # OS metadata
 .DS_Store
+.vercel

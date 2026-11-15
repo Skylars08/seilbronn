@@ -1,0 +1,10 @@
+.env*
+.venv/
+.git/
+__pycache__/
+data/*.sqlite3*
+data/incoming/
+data/imports/
+data/predictions/
+data/exports/
+models/

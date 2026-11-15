@@ -150,19 +150,27 @@
       border-radius: 28px;
       box-shadow: 0 24px 60px -12px rgba(35, 30, 20, 0.2);
     }
+      @media (max-width: 639px) {
+      header nav { width: 100%; }
+      header nav button { flex: 0 0 auto; white-space: nowrap; }
+      main, .f-card { min-width: 0; }
+      .f-card { overflow-wrap: anywhere; }
+      canvas { max-width: 100%; }
+      input[type="date"] { min-width: 0; max-width: 100%; }
+    }
   </style>
 </head>
 <body class="font-sans antialiased flex flex-col min-h-screen">
 
   <!-- TOP HEADER / NAV -->
-  <header class="w-full max-w-6xl mx-auto px-6 pt-6 pb-4 flex items-center justify-between">
+  <header class="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-4 flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-between">
     <!-- Brand Title -->
     <div class="cursor-pointer" onclick="switchTab('overview')">
       <span class="text-2xl font-bold tracking-tight text-[#1F221B]">Seilbronn</span>
     </div>
 
     <!-- Navigation Pills Group -->
-    <nav class="flex items-center space-x-1.5 bg-transparent overflow-x-auto py-1">
+    <nav class="flex items-center space-x-1.5 bg-transparent overflow-x-auto py-1 max-w-full min-w-0">
       <button onclick="switchTab('overview')" id="nav-overview" class="f-pill-dark">
         Overview
       </button>
@@ -191,7 +199,7 @@
   </header>
 
   <!-- MAIN WRAPPER -->
-  <main class="w-full max-w-6xl mx-auto px-6 py-4 flex-1 space-y-6">
+  <main class="w-full max-w-6xl mx-auto px-4 sm:px-6 py-4 flex-1 space-y-6">
 
     <!-- ======================================================== -->
     <!-- VIEW 1: OVERVIEW (THE EXACT FIGMA LAYOUT) -->
@@ -216,6 +224,47 @@
           <span class="text-[#8C9086]">▾</span>
         </button>
       </div>
+
+      <section class="f-card p-4 sm:p-6">
+        <h2 class="text-lg font-bold">Latest YouTube comments</h2>
+        <p class="text-sm mb-3">Public comments from three tracked videos. Pending relevance and stance review.</p>
+        <button type="button" id="live-refresh" class="f-pill-light">Check YouTube</button>
+        <p id="live-status" class="text-sm mt-3" role="status"></p>
+        <ul id="live-comments" class="space-y-3"></ul>
+      </section>
+      <script>
+        document.getElementById('live-refresh').addEventListener('click', async (event) => {
+          const button = event.currentTarget;
+          const status = document.getElementById('live-status');
+          const list = document.getElementById('live-comments');
+          button.disabled = true;
+          status.textContent = 'Checking YouTube…';
+          try {
+            const response = await fetch('/api/live-comments');
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.detail);
+            list.replaceChildren();
+            for (const comment of data.comments) {
+              const row = document.createElement('li');
+              const source = document.createElement('a');
+              source.href = comment.url;
+              source.textContent = 'YouTube · ' + comment.published_at.slice(0, 10);
+              source.className = 'text-sm underline';
+              const text = document.createElement('p');
+              text.textContent = comment.text;
+              row.append(source, text);
+              list.append(row);
+            }
+            status.textContent = data.comments.length + ' comments · Checked ' +
+              new Date(data.checked_at).toLocaleString() +
+              (data.unavailable_videos ? ' · Some videos unavailable' : '');
+          } catch (error) {
+            status.textContent = error.message;
+          } finally {
+            button.disabled = false;
+          }
+        });
+      </script>
 
       <!-- MAIN ROW: Donut on Left (65%), Support Score & Stops on Right (35%) -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
@@ -257,9 +306,9 @@
           <!-- TOP RIGHT: Support Score Card (White) -->
           <div class="f-card p-6 flex flex-col justify-between flex-1">
             <div>
-              <h3 class="text-sm font-bold text-[#1F221B]">Support score</h3>
+              <h3 class="text-sm font-bold text-[#1F221B]">Provisional support score</h3>
               <div class="text-4xl font-black text-[#1F221B] tracking-tight my-2" id="card-score-value">
-                6.25 / 10
+                —
               </div>
               <p class="text-xs text-[#787C72]" id="card-score-subtext">
                 8 scored posts · demo sample
@@ -451,47 +500,20 @@
         <span class="text-[11px] font-bold uppercase tracking-wider text-[#8C9086]">PUBLIC SENTIMENT</span>
         <h2 class="text-2xl font-bold text-[#1F221B]">Support Score &amp; Expressed Stance</h2>
         <p class="text-xs text-[#62665D] mt-1">
-          Measured from verified citizen feedback, council decisions, and media coverage on a 0 to 10 scale.
+          Provisional scores from the selected dataset, on a 0 to 10 scale.
         </p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div class="f-card p-6 flex flex-col justify-center text-center">
           <span class="text-xs font-semibold text-[#8C9086]">Average Support Level</span>
-          <div class="text-5xl font-black text-[#1F221B] my-2">6.25</div>
-          <span class="text-xs text-[#408643] font-bold">Constructive / Favorable</span>
+          <div class="text-5xl font-black text-[#1F221B] my-2" id="score-page-average">—</div>
+          <span class="text-xs" id="score-page-count"></span>
         </div>
 
         <div class="f-card p-6 md:col-span-2 space-y-3">
           <span class="text-xs font-bold text-[#1F221B]">Polarity Distribution Across Statements</span>
-          <div class="space-y-2 text-xs">
-            <div class="flex justify-between text-[#62665D]">
-              <span>Strong Support (8–10):</span>
-              <strong class="text-[#1F221B]">189 posts (51%)</strong>
-            </div>
-            <div class="w-full bg-[#F0EBE0] h-2.5 rounded-full overflow-hidden">
-              <div class="bg-[#5BA057] h-full" style="width: 51%"></div>
-            </div>
-
-            <div class="flex justify-between text-[#62665D]">
-              <span>Lean Support / Conditional (6–7):</span>
-              <strong class="text-[#1F221B]">136 posts (37%)</strong>
-            </div>
-            <div class="w-full bg-[#F0EBE0] h-2.5 rounded-full overflow-hidden">
-              <div class="bg-[#E8A938] h-full" style="width: 37%"></div>
-            </div>
-
-            <div class="flex justify-between text-[#62665D]">
-              <span>Skeptical / Critical (0–4):</span>
-              <strong class="text-[#1F221B]">30 posts (8%)</strong>
-            </div>
-            <div class="w-full bg-[#F0EBE0] h-2.5 rounded-full overflow-hidden">
-              <div class="bg-[#CE643D] h-full" style="width: 8%"></div>
-            </div>
-          </div>
-          <p class="text-[11px] text-[#8C9086] pt-2">
-            314 factual press reports and neutral council milestones are tracked separately from polarity averages.
-          </p>
+          <div id="score-page-distribution" class="space-y-2 text-xs" aria-live="polite"></div>
         </div>
       </div>
 
@@ -858,7 +880,7 @@
         </button>
       </div>
       <p class="text-xs text-[#62665D]">
-        Average score is <strong>6.25 / 10</strong>. Unclear posts are tracked separately from the average.
+        Scores are provisional. Check the reviewed records before drawing conclusions.
       </p>
       <div class="w-full h-44">
         <canvas id="scoreDistCanvas"></canvas>
@@ -1212,21 +1234,27 @@
       searchTimer = setTimeout(() => loadArchive(1), 250);
     }
 
+    let archiveRequest = 0;
     async function loadArchive(page = 1) {
+      const request = ++archiveRequest;
       figmaData.archivePage = page;
       const q = document.getElementById('search-input')?.value || '';
       const topic = document.getElementById('topic-filter')?.value || 'all';
 
-      let url = `/api/archive?page=${page}&limit=12&topic=${topic}&query=${encodeURIComponent(q)}`;
+      let url = `/api/archive?page=${page}&limit=12&topic=${encodeURIComponent(topic)}&query=${encodeURIComponent(q)}`;
       if (activeStartDate) url += `&start_date=${activeStartDate}`;
       if (activeEndDate) url += `&end_date=${activeEndDate}`;
 
       try {
         const res = await fetch(url);
         const data = await res.json();
-        renderArchiveCards(data);
+        if (!res.ok) throw new Error("Could not load evidence records.");
+        if (request === archiveRequest) renderArchiveCards(data);
       } catch (err) {
-        console.error(err);
+        if (request === archiveRequest) {
+          document.getElementById("archive-items-container").textContent = "Could not load evidence records. Change the filter to retry.";
+          document.getElementById("archive-count-label").textContent = "Unavailable";
+        }
       }
     }
 
@@ -1347,8 +1375,26 @@
 
         // 4. Update Support Score card
         const scoreEl = document.getElementById('card-score-value');
+        const bins = data.score_distribution;
+        const scored = bins.reduce((total, count) => total + count, 0);
+        document.getElementById('score-page-average').textContent =
+          data.average_support_score == null ? 'No scores' : data.average_support_score + ' / 10';
+        document.getElementById('score-page-count').textContent = scored + ' scored records';
+        const distribution = document.getElementById('score-page-distribution');
+        distribution.replaceChildren();
+        for (const [label, start, end] of [['8–10 · Strong support', 8, 10], ['6–7 · Lean support', 6, 7], ['5 · Midpoint', 5, 5], ['0–4 · Critical', 0, 4]]) {
+          const count = bins.slice(start, end + 1).reduce((sum, n) => sum + n, 0);
+          const row = document.createElement('div');
+          row.className = 'flex justify-between gap-2';
+          const name = document.createElement('span');
+          name.textContent = label;
+          const value = document.createElement('strong');
+          value.textContent = count + ' (' + (scored ? Math.round(100 * count / scored) : 0) + '%)';
+          row.append(name, value);
+          distribution.append(row);
+        }
         if (scoreEl) {
-          scoreEl.textContent = (data.average_support_score || 6.25) + ' / 10';
+          scoreEl.textContent = data.average_support_score == null ? '—' : data.average_support_score + ' / 10';
         }
         const scoreSub = document.getElementById('card-score-subtext');
         if (scoreSub) {
